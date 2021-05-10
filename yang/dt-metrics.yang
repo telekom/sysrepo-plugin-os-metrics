@@ -183,12 +183,19 @@ module dt-metrics {
 
         list average {
             key "time";
+            description
+                "The average system load over a specific time interval which is specified through the 'time' node.
+                 These nodes are only present when the time thresholds are exceeded on the implementation side since the beginning of the program.";
             leaf time {
                 type average-time;
+                description
+                    "Time interval for the calculated load percentage";
             }
             leaf load {
                 type percent;
                 mandatory true;
+                description
+                    "The average system load for the selected time period";
             }
         }
 
@@ -294,6 +301,9 @@ module dt-metrics {
         if-feature sensor-notifications;
         leaf-list sensor {
             type string;
+            mandatory true;
+            description
+                "Sensor name for which the critical temperature has been reached.";
         }
     }
 }
