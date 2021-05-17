@@ -22,11 +22,6 @@ module dt-metrics {
         specific language governing permissions and limitations
         under the License.";
 
-    feature sensor-notifications {
-        description
-            "Indicates that critical sensor notifications are supported.";
-    }
-
     typedef percent {
         type uint8 {
             range "0 .. 100";
@@ -294,16 +289,6 @@ module dt-metrics {
                         "Number of processes that exist with this process name.";
                 }
             }
-        }
-    }
-
-    notification sensor-critical-temperature-reached {
-        if-feature sensor-notifications;
-        leaf-list sensor {
-            type string;
-            mandatory true;
-            description
-                "Sensor name for which the critical temperature has been reached.";
         }
     }
 }
