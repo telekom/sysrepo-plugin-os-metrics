@@ -1,294 +1,458 @@
 module dt-metrics {
-    yang-version 1.1;
-    namespace "urn:ietf:params:xml:ns:dt-metrics";
-    prefix dt-metrics;
-    organization
-        "Deutsche Telekom AG.";
+  yang-version 1.1;
+  namespace "urn:ietf:params:xml:ns:dt-metrics";
+  prefix dt-metrics;
+
+  organization
+    "Deutsche Telekom AG.";
+  description
+    "(C) 2020 Deutsche Telekom AG.
+
+    Deutsche Telekom AG and all other contributors /
+    copyright owners license this file to you under the Apache
+    License, Version 2.0 (the 'License'); you may not use this
+    file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    'AS IS' BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.";
+
+  revision 2021-05-21 {
+    description "Initial version after PD - IF peer-review";
+  }
+
+  feature usage-notifications {
     description
-        "(C) 2020 Deutsche Telekom AG.
+      "Indicates that critical usage percent notifications are supported.";
+  }
 
-        Deutsche Telekom AG and all other contributors /
-        copyright owners license this file to you under the Apache
-        License, Version 2.0 (the 'License'); you may not use this
-        file except in compliance with the License.
-        You may obtain a copy of the License at
-
-        http://www.apache.org/licenses/LICENSE-2.0
-
-        Unless required by applicable law or agreed to in writing,
-        software distributed under the License is distributed on an
-        'AS IS' BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-        KIND, either express or implied. See the License for the
-        specific language governing permissions and limitations
-        under the License.";
-
-    typedef percent {
-        type uint8 {
-            range "0 .. 100";
-        }
+  typedef percent {
+    type decimal64 {
+      fraction-digits 2;
+      range "0 .. 100";
     }
+  }
 
-    typedef average-time {
-        type enumeration {
-            enum avg-1-min {
-                value 1;
-            }
-            enum avg-5-min {
-                value 5;
-            }
-            enum avg-15-min {
-                value 15;
-            }
+  grouping usage-notifications-group {
+    container usage-notifications {
+      if-feature usage-notifications;
+      leaf poll-interval {
+        type uint32;
+        description "Interval between consecutive percentage usage checks";
+        default 60;
+        units "seconds";
+      }
+      list usage-thresholds {
+        description "Configure thresholds for notifications for percentage values that are being
+          monitored.";
+        key name;
+        leaf name {
+          type string;
         }
+        leaf threshold {
+          mandatory true;
+          type percent;
+        }
+      }
     }
+  }
 
-    container metrics {
-        config false;
+  grouping cpu-stats {
+    leaf user-perc {
+      type percent;
+      description
+        "Percentage of time the CPU is used at the user level.";
+    }
+    leaf sys-perc {
+      type percent;
+      description
+        "Percentage of time the CPU is used at the system level.";
+    }
+    leaf nice-perc {
+      type percent;
+      description
+        "Percentage of time the CPU is executing processes with a manually set nice value.";
+    }
+    leaf idle-perc {
+      type percent;
+      description
+        "Percentage of time the CPU is idle when no I/O requests are in progress.";
+    }
+    leaf wait-perc {
+      type percent;
+      description
+        "Percentage of time the CPU is idle AND there is at least one I/O request in progress.";
+    }
+    leaf irq-perc {
+      type percent;
+      description
+        "Percentage of time the CPU is servicing hardware interrupts.";
+    }
+    leaf softirq-perc {
+      type percent;
+      description
+        "Percentage of time the CPU is servicing software interrupts.";
+    }
+    leaf stolen-perc {
+      type percent;
+      description
+        "Percentage of stolen CPU time, i.e. the time spent in other OS contexts when running in a virtualized environment.";
+    }
+  }
+
+  container metrics {
+    description
+      "Data nodes representing different types of metrics.";
+
+    container cpu-state {
+      config false;
+      description
+        "Data nodes representing CPU metrics.";
+
+      uses cpu-stats;
+
+      leaf num-cpus {
+        type uint32;
         description
-            "Data nodes representing different types of metrics.";
+          "Number of CPU cores";
+      }
 
-        container components {
-            description
-                "Data nodes representing hardware components metrics.";
+      list cpu {
+        description
+          "Data nodes representing CPU core metrics.";
+        key "id";
 
-            container cpu {
-                description
-                    "Data nodes representing CPU metrics.";
-
-                leaf idle-perc {
-                    type percent;
-                    description
-                        "Percentage of time the CPU is idle when no I/O requests are in progress.";
-                }
-                leaf wait-perc {
-                    type percent;
-                    description
-                        "Percentage of time the CPU is idle AND there is at least one I/O request in progress.";
-                }
-                leaf stolen-perc {
-                    type percent;
-                    description
-                        "Percentage of stolen CPU time, i.e. the time spent in other OS contexts when running in a virtualized environment.";
-                }
-                leaf system-perc {
-                    type percent;
-                    description
-                        "Percentage of time the CPU is used at the system level.";
-                }
-                leaf user-perc {
-                    type percent;
-                    description
-                        "Percentage of time the CPU is used at the user level.";
-                }
-            }
-
-            container disks {
-                description
-                    "Data nodes representing disk metrics.";
-
-                list disk {
-                    key "name";
-                    leaf name {
-                        type string;
-                        description
-                            "Name(handle) of disk device.";
-                    }
-                    leaf inode-used-perc {
-                        type percent;
-                        description
-                            "The percentage of inodes that are used on a device.";
-                    }
-                    leaf space-used-perc {
-                        type percent;
-                        description
-                            "The percentage of disk space that is being used on a device.";
-                    }
-                }
-            }
-
-            container memory {
-                description
-                    "Data nodes representing disk metrics.";
-
-                leaf free {
-                    type uint64;
-                    units "Megabytes";
-                    description
-                        "Megabytes of free memory.";
-                }
-                leaf swap-free-perc {
-                    type percent;
-                    description
-                        "Percentage of free swap memory that is free.";
-                }
-                leaf swap-free {
-                    type uint64;
-                    units "Megabytes";
-                    description
-                        "Megabytes of free swap memory that is free.";
-                }
-                leaf swap-total {
-                    type uint64;
-                    units "Megabytes";
-                    description
-                        "Megabytes of total physical swap memory.";
-                }
-                leaf swap-used {
-                    type uint64;
-                    units "Megabytes";
-                    description
-                        "Megabytes of total swap memory used.";
-                }
-                leaf total {
-                    type uint64;
-                    units "Megabytes";
-                    description
-                        "Total megabytes of memory.";
-                }
-                leaf usable {
-                    type uint64;
-                    units "Megabytes";
-                    description
-                        "Total megabytes of usable memory.";
-                }
-                leaf usable-perc {
-                    type percent;
-                    description
-                        "Percentage of total memory that is usable.";
-                }
-                leaf used-buffers {
-                    type uint64;
-                    description
-                        "Number of buffers being used by the kernel for block io.";
-                }
-                leaf used-cached {
-                    type uint64;
-                    units "Megabytes";
-                    description
-                        "Memory used for the page cache.";
-                }
-                leaf used-shared {
-                    type uint64;
-                    units "Megabytes";
-                    description
-                        "Memory shared between separate processes and typically used for inter-process communication.";
-                }
-            }
+        leaf id {
+          type uint32;
         }
 
-        list average {
-            key "time";
-            description
-                "The average system load over a specific time interval which is specified through the 'time' node.
-                 These nodes are only present when the time thresholds are exceeded on the implementation side since the beginning of the program.";
-            leaf time {
-                type average-time;
-                description
-                    "Time interval for the calculated load percentage";
-            }
-            leaf load {
-                type percent;
-                mandatory true;
-                description
-                    "The average system load for the selected time period";
-            }
+        uses cpu-stats;
+      }
+
+      container average-load {
+        leaf avg-1min-load {
+          type percent;
+          description
+            "The average system load over a 1 minute period";
         }
-
-        container processes {
-            list process {
-                key "name";
-                leaf name {
-                    type string;
-                }
-
-                container memory {
-                    leaf real {
-                        type uint64;
-                        units "Megabytes";
-                        description
-                            "Amount of physical memory allocated to a process minus shared libraries in megabytes.";
-                    }
-                    leaf rss {
-                        type uint64;
-                        units "Megabytes";
-                        description
-                            "Amount of physical memory allocated to a process, including memory from shared libraries in megabytes.";
-                    }
-                    leaf vsz {
-                        type uint64;
-                        units "Megabytes";
-                        description
-                            "Amount of all the memory a process can access, including swapped, physical, and shared in megabytes.";
-                    }
-                }
-
-                container io {
-                    leaf read-count {
-                        type uint64;
-                        description
-                            "Number of reads by a process.";
-                    }
-                    leaf write-count {
-                        type uint64;
-                        description
-                            "Number of writes by a process.";
-                    }
-                    leaf read-kbytes {
-                        type uint64;
-                        units "Kilobytes";
-                        description
-                            "Kilobytes read by a process.";
-                    }
-                    leaf write-kbytes {
-                        type uint64;
-                        units "Kilobytes";
-                        description
-                            "Kilobytes written by a process.";
-                    }
-                }
-
-                leaf thread-count {
-                    type uint64;
-                    description
-                        "Number of threads a process is using.";
-                }
-
-                leaf cpu-perc {
-                    type percent;
-                    description
-                        "Percentage of cpu being consumed by a process.";
-                }
-
-                leaf open-file-descriptors {
-                    type uint64;
-                    description
-                        "Number of files being used by a process.";
-                }
-
-                leaf open-file-descriptors-perc {
-                    type percent;
-                    description
-                        "Number of files being used by a process as a percentage of the total file descriptors allocated to the process.";
-                }
-
-                leaf involuntary-ctx-switches {
-                    type uint64;
-                    description
-                        "Number of involuntary context switches for a process.";
-                }
-
-                leaf voluntary-ctx-switches {
-                    type uint64;
-                    description
-                        "Number of voluntary context switches for a process.";
-                }
-
-                leaf pid-count {
-                    type uint64;
-                    description
-                        "Number of processes that exist with this process name.";
-                }
-            }
+        leaf avg-5min-load {
+          type percent;
+          description
+            "The average system load over a 5 minute period";
         }
+        leaf avg-15min-load {
+          type percent;
+          description
+            "The average system load over a 15 minute period";
+        }
+      }
     }
+
+    container filesystem-state {
+      description
+        "Data nodes representing filesystem metrics.";
+      list filesystem {
+        key "name";
+        leaf name {
+          type string;
+          description
+            "Name (handle) of filesystem device.";
+        }
+        leaf type {
+          config false;
+          type string;
+          description
+            "Type of filesystem.";
+        }
+        leaf total-blocks {
+          config false;
+          type uint64;
+          units "blocks";
+        }
+        leaf used-blocks {
+          config false;
+          type uint64;
+          units "blocks";
+        }
+        leaf avail-blocks {
+          config false;
+          type uint64;
+          units "blocks";
+        }
+        leaf blocksize {
+          config false;
+          type uint64;
+          units "Kilobytes";
+        }
+        leaf inode-used-perc {
+          config false;
+          type percent;
+          description
+            "The percentage of inodes that are used on a device.";
+        }
+        leaf space-used-perc {
+          config false;
+          type percent;
+          description
+            "The percentage of disk space that is being used on a device.";
+        }
+        leaf mount-point {
+          config false;
+          type string;
+          description
+            "The location the filesystem is mounted at.";
+        }
+
+        uses usage-notifications-group;
+      }
+    }
+
+    container memory-state {
+      description
+        "Data nodes representing RAM memory metrics.";
+      leaf free {
+        config false;
+        type uint64;
+        units "Megabytes";
+        description
+          "Megabytes of free memory.";
+      }
+      leaf swap-free-perc {
+        config false;
+        type percent;
+        description
+          "Percentage of free swap memory that is free.";
+      }
+      leaf swap-free {
+        config false;
+        type uint64;
+        units "Megabytes";
+        description
+          "Megabytes of free swap memory that is free.";
+      }
+      leaf swap-total {
+        config false;
+        type uint64;
+        units "Megabytes";
+        description
+          "Megabytes of total physical swap memory.";
+      }
+      leaf swap-used {
+        config false;
+        type uint64;
+        units "Megabytes";
+        description
+          "Megabytes of total swap memory used.";
+      }
+      leaf total {
+        config false;
+        type uint64;
+        units "Megabytes";
+        description
+          "Total megabytes of memory.";
+      }
+      leaf usable {
+        config false;
+        type uint64;
+        units "Megabytes";
+        description
+          "Total megabytes of usable memory.";
+      }
+      leaf usable-perc {
+        config false;
+        type percent;
+        description
+          "Percentage of total memory that is usable.";
+      }
+      leaf used-buffers {
+        config false;
+        type uint64;
+        description
+          "Number of buffers being used by the kernel for block io.";
+      }
+      leaf used-cached {
+        config false;
+        type uint64;
+        units "Megabytes";
+        description
+          "Memory used for the page cache.";
+      }
+      leaf used-shared {
+        config false;
+        type uint64;
+        units "Megabytes";
+        description
+          "Memory shared between separate processes and typically used for inter-process communication.";
+      }
+      leaf hugepages-total {
+        config false;
+        type uint64;
+        description
+          "Total number of hugepages.";
+      }
+      leaf hugepages-free {
+        config false;
+        type uint64;
+        description
+          "Number of free hugepages.";
+      }
+      leaf hugepage-size {
+        config false;
+        type uint64;
+        units "Kilobytes";
+        description "Size of a hugepage.";
+      }
+
+      uses usage-notifications-group;
+    }
+
+    container processes {
+      config false;
+      description
+        "Data nodes representing process metrics.";
+      list process {
+        key "pid";
+        leaf pid {
+          type uint64;
+          description
+            "Process identifier";
+        }
+
+        container memory {
+          leaf real {
+            type uint64;
+            units "Megabytes";
+            description
+              "Amount of physical memory allocated to a process minus shared libraries in megabytes.";
+          }
+          leaf rss {
+            type uint64;
+            units "Megabytes";
+            description
+              "Amount of physical memory allocated to a process, including memory from shared libraries in megabytes.";
+          }
+          leaf vsz {
+            type uint64;
+            units "Megabytes";
+            description
+              "Amount of all the memory a process can access, including swapped, physical, and shared in megabytes.";
+          }
+        }
+
+        container io {
+          leaf read-count {
+            type uint64;
+            description
+              "Number of reads by a process.";
+          }
+          leaf write-count {
+            type uint64;
+            description
+              "Number of writes by a process.";
+          }
+          leaf read-kbytes {
+            type uint64;
+            units "Kilobytes";
+            description
+              "Kilobytes read by a process.";
+          }
+          leaf write-kbytes {
+            type uint64;
+            units "Kilobytes";
+            description
+              "Kilobytes written by a process.";
+          }
+        }
+
+        leaf thread-count {
+          type uint64;
+          description
+            "Number of threads a process is using.";
+        }
+
+        leaf cpu-perc {
+          type percent;
+          description
+            "Percentage of cpu being consumed by a process.";
+        }
+
+        leaf open-file-descriptors {
+          type uint64;
+          description
+            "Number of files being used by a process.";
+        }
+
+        leaf open-file-descriptors-perc {
+          type percent;
+          description
+            "Number of files being used by a process as a percentage of the total file descriptors allocated to the process.";
+        }
+
+        leaf involuntary-ctx-switches {
+          type uint64;
+          description
+            "Number of involuntary context switches for a process.";
+        }
+
+        leaf voluntary-ctx-switches {
+          type uint64;
+          description
+            "Number of voluntary context switches for a process.";
+        }
+
+        leaf pid-count {
+          type uint64;
+          description
+            "Number of processes that exist with this process name.";
+        }
+      }
+    }
+  }
+
+  notification memory-threshold-exceeded {
+    if-feature usage-notifications;
+    description "Memory notification to be sent when a usage value crosses
+      a configured threshold.";
+    leaf threshold-name {
+      type leafref {
+        path "/metrics/memory-state/usage-notifications/usage-thresholds/name";
+      }
+      description
+        "Name of the usage-threshold.";
+    }
+    leaf usage-perc {
+      type percent;
+      description
+        "Memory usage percentage.";
+    }
+  }
+
+  notification filesystem-threshold-exceeded {
+    if-feature usage-notifications;
+    description "Filesystem notification to be sent when a usage value crosses
+      a configured threshold.";
+    leaf filesystem-name {
+      type leafref {
+        path "/metrics/filesystem-state/filesystem/name";
+      }
+    }
+    leaf threshold-name {
+      type leafref {
+        path "/metrics/filesystem-state/filesystem/usage-notifications/usage-thresholds/name";
+      }
+      description
+        "Name of the usage-threshold.";
+    }
+    leaf usage-perc {
+      type percent;
+      description
+        "Disk usage percentage.";
+    }
+  }
 }

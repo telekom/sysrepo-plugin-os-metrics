@@ -1,0 +1,102 @@
+module sensor-notifications-augment {
+  yang-version 1.1;
+  namespace "urn:ietf:params:xml:ns:yang:sensor-notifications-augment";
+  prefix sensor-notifications-augment;
+
+  import ietf-hardware {
+    prefix hw;
+  }
+
+  organization
+    "Deutsche Telekom AG.";
+
+  revision 2021-05-14 {
+    description
+      "Initial revision.";
+  }
+
+  augment "/hw:hardware/hw:component" {
+    if-feature hw:hardware-sensor;
+    container sensor-notifications {
+      description "Configure thresholds for notifications for sensors values that are being
+        monitored.";
+      leaf poll-interval {
+        type uint32;
+        description "Interval between consecutive sensor data collection triggers";
+        default 60;
+        units "seconds";
+      }
+      list sensor-threshold {
+        description "Configure thresholds for notifications for sensors values that are being
+          monitored.";
+        key name;
+        leaf name {
+          type string;
+        }
+        choice threshold {
+          mandatory true;
+          case max {
+            leaf max {
+              type hw:sensor-value;
+              description "Send notification when the sensor-value exceeds the
+                configured threshold";
+            }
+          }
+          case min {
+            leaf min {
+              type hw:sensor-value;
+              description "Send notification when the sensor-value is less than the
+                configured threshold";
+            }
+          }
+        }
+      }
+    }
+
+    notification sensor-threshold-exceeded {
+      description "Notifications to be sent when a sensor value crosses
+                  a configured threshold.
+                  PD - An additional sensor name is not needed in this case since it is augmented under component
+                  and the 'name' leaf will be provided with the notification along with 'class'";
+
+      leaf sensor-threshold-name {
+        type leafref {
+          path "/hw:hardware/hw:component[hw:name=current()/../../hw:name]"
+               + "/sensor-notifications/sensor-threshold/name";
+        }
+        description
+          "Name of the sensor-threshold.";
+      }
+
+      choice sensor-threshold-value {
+        case max {
+          leaf max {
+            type leafref {
+              path "/hw:hardware/hw:component[hw:name=current()/../../hw:name]"
+                   + "/sensor-notifications/sensor-threshold/max";
+            }
+          }
+        }
+        case min {
+          leaf min {
+            type leafref {
+              path "/hw:hardware/hw:component[hw:name=current()/../../hw:name]"
+                   + "/sensor-notifications/sensor-threshold/min";
+            }
+          }
+        }
+      }
+
+      leaf sensor-value {
+        config false;
+        type leafref {
+          path "/hw:hardware/hw:component[hw:name=current()/../../hw:name]"
+                + "/hw:sensor-data/hw:value";
+        }
+        description "PD - This might be wrong since 'config false' is a workaround because you can't reference
+          a 'config false' leaf to a 'config true' one, but on the other hand you can't have 'config false' on
+          a notification and for this reason pyang issues a warning 'explicit config statement is ignored'";
+      }
+    }
+  }
+}
