@@ -137,17 +137,23 @@ module dt-metrics {
 
       container average-load {
         leaf avg-1min-load {
-          type percent;
+          type decimal64 {
+            fraction-digits 2;
+          }
           description
             "The average system load over a 1 minute period";
         }
         leaf avg-5min-load {
-          type percent;
+          type decimal64 {
+            fraction-digits 2;
+          }
           description
             "The average system load over a 5 minute period";
         }
         leaf avg-15min-load {
-          type percent;
+          type decimal64 {
+            fraction-digits 2;
+          }
           description
             "The average system load over a 15 minute period";
         }
@@ -213,100 +219,89 @@ module dt-metrics {
       }
     }
 
-    container memory-state {
-      description
-        "Data nodes representing RAM memory metrics.";
-      leaf free {
+    container memory {
+      container memory-state {
         config false;
-        type uint64;
-        units "Megabytes";
         description
-          "Megabytes of free memory.";
-      }
-      leaf swap-free-perc {
-        config false;
-        type percent;
-        description
-          "Percentage of free swap memory that is free.";
-      }
-      leaf swap-free {
-        config false;
-        type uint64;
-        units "Megabytes";
-        description
-          "Megabytes of free swap memory that is free.";
-      }
-      leaf swap-total {
-        config false;
-        type uint64;
-        units "Megabytes";
-        description
-          "Megabytes of total physical swap memory.";
-      }
-      leaf swap-used {
-        config false;
-        type uint64;
-        units "Megabytes";
-        description
-          "Megabytes of total swap memory used.";
-      }
-      leaf total {
-        config false;
-        type uint64;
-        units "Megabytes";
-        description
-          "Total megabytes of memory.";
-      }
-      leaf usable {
-        config false;
-        type uint64;
-        units "Megabytes";
-        description
-          "Total megabytes of usable memory.";
-      }
-      leaf usable-perc {
-        config false;
-        type percent;
-        description
-          "Percentage of total memory that is usable.";
-      }
-      leaf used-buffers {
-        config false;
-        type uint64;
-        description
-          "Number of buffers being used by the kernel for block io.";
-      }
-      leaf used-cached {
-        config false;
-        type uint64;
-        units "Megabytes";
-        description
-          "Memory used for the page cache.";
-      }
-      leaf used-shared {
-        config false;
-        type uint64;
-        units "Megabytes";
-        description
-          "Memory shared between separate processes and typically used for inter-process communication.";
-      }
-      leaf hugepages-total {
-        config false;
-        type uint64;
-        description
-          "Total number of hugepages.";
-      }
-      leaf hugepages-free {
-        config false;
-        type uint64;
-        description
-          "Number of free hugepages.";
-      }
-      leaf hugepage-size {
-        config false;
-        type uint64;
-        units "Kilobytes";
-        description "Size of a hugepage.";
+          "Data nodes representing RAM memory metrics.";
+        leaf free {
+          type uint64;
+          units "Megabytes";
+          description
+            "Megabytes of free memory.";
+        }
+        leaf swap-free-perc {
+          type percent;
+          description
+            "Percentage of free swap memory that is free.";
+        }
+        leaf swap-free {
+          type uint64;
+          units "Megabytes";
+          description
+            "Megabytes of free swap memory that is free.";
+        }
+        leaf swap-total {
+          type uint64;
+          units "Megabytes";
+          description
+            "Megabytes of total physical swap memory.";
+        }
+        leaf swap-used {
+          type uint64;
+          units "Megabytes";
+          description
+            "Megabytes of total swap memory used.";
+        }
+        leaf total {
+          type uint64;
+          units "Megabytes";
+          description
+            "Total megabytes of memory.";
+        }
+        leaf usable {
+          type uint64;
+          units "Megabytes";
+          description
+            "Total megabytes of usable memory.";
+        }
+        leaf usable-perc {
+          type percent;
+          description
+            "Percentage of total memory that is usable.";
+        }
+        leaf used-buffers {
+          type uint64;
+          description
+            "Number of buffers being used by the kernel for block io.";
+        }
+        leaf used-cached {
+          type uint64;
+          units "Megabytes";
+          description
+            "Memory used for the page cache.";
+        }
+        leaf used-shared {
+          type uint64;
+          units "Megabytes";
+          description
+            "Memory shared between separate processes and typically used for inter-process communication.";
+        }
+        leaf hugepages-total {
+          type uint64;
+          description
+            "Total number of hugepages.";
+        }
+        leaf hugepages-free {
+          type uint64;
+          description
+            "Number of free hugepages.";
+        }
+        leaf hugepage-size {
+          type uint64;
+          units "Kilobytes";
+          description "Size of a hugepage.";
+        }
       }
 
       uses usage-notifications-group;
@@ -405,12 +400,6 @@ module dt-metrics {
           description
             "Number of voluntary context switches for a process.";
         }
-
-        leaf pid-count {
-          type uint64;
-          description
-            "Number of processes that exist with this process name.";
-        }
       }
     }
   }
@@ -421,7 +410,7 @@ module dt-metrics {
       a configured threshold.";
     leaf threshold-name {
       type leafref {
-        path "/metrics/memory-state/usage-notifications/usage-thresholds/name";
+        path "/metrics/memory/usage-notifications/usage-thresholds/name";
       }
       description
         "Name of the usage-threshold.";
