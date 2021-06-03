@@ -58,49 +58,58 @@ module dt-metrics {
         leaf threshold {
           mandatory true;
           type percent;
+          units "Percent";
         }
       }
     }
   }
 
   grouping cpu-stats {
-    leaf user-perc {
+    leaf user {
       type percent;
+      units "Percent";
       description
         "Percentage of time the CPU is used at the user level.";
     }
-    leaf sys-perc {
+    leaf sys {
       type percent;
+      units "Percent";
       description
         "Percentage of time the CPU is used at the system level.";
     }
-    leaf nice-perc {
+    leaf nice {
       type percent;
+      units "Percent";
       description
         "Percentage of time the CPU is executing processes with a manually set nice value.";
     }
-    leaf idle-perc {
+    leaf idle {
       type percent;
+      units "Percent";
       description
         "Percentage of time the CPU is idle when no I/O requests are in progress.";
     }
-    leaf wait-perc {
+    leaf wait {
       type percent;
+      units "Percent";
       description
         "Percentage of time the CPU is idle AND there is at least one I/O request in progress.";
     }
-    leaf irq-perc {
+    leaf irq {
       type percent;
+      units "Percent";
       description
         "Percentage of time the CPU is servicing hardware interrupts.";
     }
-    leaf softirq-perc {
+    leaf softirq {
       type percent;
+      units "Percent";
       description
         "Percentage of time the CPU is servicing software interrupts.";
     }
-    leaf stolen-perc {
+    leaf stolen {
       type percent;
+      units "Percent";
       description
         "Percentage of stolen CPU time, i.e. the time spent in other OS contexts when running in a virtualized environment.";
     }
@@ -116,12 +125,6 @@ module dt-metrics {
         "Data nodes representing CPU metrics.";
 
       uses cpu-stats;
-
-      leaf num-cpus {
-        type uint32;
-        description
-          "Number of CPU cores";
-      }
 
       list cpu {
         description
@@ -196,15 +199,17 @@ module dt-metrics {
           type uint64;
           units "Kilobytes";
         }
-        leaf inode-used-perc {
+        leaf inode-used {
           config false;
           type percent;
+          units "Percent";
           description
             "The percentage of inodes that are used on a device.";
         }
-        leaf space-used-perc {
+        leaf space-used {
           config false;
           type percent;
+          units "Percent";
           description
             "The percentage of disk space that is being used on a device.";
         }
@@ -220,88 +225,101 @@ module dt-metrics {
     }
 
     container memory {
-      container memory-state {
+      description
+        "Data nodes representing RAM memory metrics.";
+      leaf free {
         config false;
+        type uint64;
+        units "Megabytes";
         description
-          "Data nodes representing RAM memory metrics.";
-        leaf free {
-          type uint64;
-          units "Megabytes";
-          description
-            "Megabytes of free memory.";
-        }
-        leaf swap-free-perc {
-          type percent;
-          description
-            "Percentage of free swap memory that is free.";
-        }
-        leaf swap-free {
-          type uint64;
-          units "Megabytes";
-          description
-            "Megabytes of free swap memory that is free.";
-        }
-        leaf swap-total {
-          type uint64;
-          units "Megabytes";
-          description
-            "Megabytes of total physical swap memory.";
-        }
-        leaf swap-used {
-          type uint64;
-          units "Megabytes";
-          description
-            "Megabytes of total swap memory used.";
-        }
-        leaf total {
-          type uint64;
-          units "Megabytes";
-          description
-            "Total megabytes of memory.";
-        }
-        leaf usable {
-          type uint64;
-          units "Megabytes";
-          description
-            "Total megabytes of usable memory.";
-        }
-        leaf usable-perc {
-          type percent;
-          description
-            "Percentage of total memory that is usable.";
-        }
-        leaf used-buffers {
-          type uint64;
-          description
-            "Number of buffers being used by the kernel for block io.";
-        }
-        leaf used-cached {
-          type uint64;
-          units "Megabytes";
-          description
-            "Memory used for the page cache.";
-        }
-        leaf used-shared {
-          type uint64;
-          units "Megabytes";
-          description
-            "Memory shared between separate processes and typically used for inter-process communication.";
-        }
-        leaf hugepages-total {
-          type uint64;
-          description
-            "Total number of hugepages.";
-        }
-        leaf hugepages-free {
-          type uint64;
-          description
-            "Number of free hugepages.";
-        }
-        leaf hugepage-size {
-          type uint64;
-          units "Kilobytes";
-          description "Size of a hugepage.";
-        }
+          "Megabytes of free memory.";
+      }
+      leaf swap-free-perc {
+        config false;
+        type percent;
+        units "Percent";
+        description
+          "Percentage of free swap memory that is free.";
+      }
+      leaf swap-free {
+        config false;
+        type uint64;
+        units "Megabytes";
+        description
+          "Megabytes of free swap memory that is free.";
+      }
+      leaf swap-total {
+        config false;
+        type uint64;
+        units "Megabytes";
+        description
+          "Megabytes of total physical swap memory.";
+      }
+      leaf swap-used {
+        config false;
+        type uint64;
+        units "Megabytes";
+        description
+          "Megabytes of total swap memory used.";
+      }
+      leaf total {
+        config false;
+        type uint64;
+        units "Megabytes";
+        description
+          "Total megabytes of memory.";
+      }
+      leaf usable {
+        config false;
+        type uint64;
+        units "Megabytes";
+        description
+          "Total megabytes of usable memory.";
+      }
+      leaf usable-perc {
+        config false;
+        type percent;
+        units "Percent";
+        description
+          "Percentage of total memory that is usable.";
+      }
+      leaf used-buffers {
+        config false;
+        type uint64;
+        description
+          "Number of buffers being used by the kernel for block io.";
+      }
+      leaf used-cached {
+        config false;
+        type uint64;
+        units "Megabytes";
+        description
+          "Memory used for the page cache.";
+      }
+      leaf used-shared {
+        config false;
+        type uint64;
+        units "Megabytes";
+        description
+          "Memory shared between separate processes and typically used for inter-process communication.";
+      }
+      leaf hugepages-total {
+        config false;
+        type uint64;
+        description
+          "Total number of hugepages.";
+      }
+      leaf hugepages-free {
+        config false;
+        type uint64;
+        description
+          "Number of free hugepages.";
+      }
+      leaf hugepage-size {
+        config false;
+        type uint64;
+        units "Kilobytes";
+        description "Size of a hugepage.";
       }
 
       uses usage-notifications-group;
@@ -371,8 +389,9 @@ module dt-metrics {
             "Number of threads a process is using.";
         }
 
-        leaf cpu-perc {
+        leaf cpu {
           type percent;
+          units "Percent";
           description
             "Percentage of cpu being consumed by a process.";
         }
@@ -385,6 +404,7 @@ module dt-metrics {
 
         leaf open-file-descriptors-perc {
           type percent;
+          units "Percent";
           description
             "Number of files being used by a process as a percentage of the total file descriptors allocated to the process.";
         }
@@ -415,8 +435,9 @@ module dt-metrics {
       description
         "Name of the usage-threshold.";
     }
-    leaf usage-perc {
+    leaf usage {
       type percent;
+      units "Percent";
       description
         "Memory usage percentage.";
     }
@@ -438,8 +459,9 @@ module dt-metrics {
       description
         "Name of the usage-threshold.";
     }
-    leaf usage-perc {
+    leaf usage {
       type percent;
+      units "Percent";
       description
         "Disk usage percentage.";
     }

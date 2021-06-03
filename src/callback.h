@@ -33,7 +33,6 @@ struct Callback {
                                 libyang::S_Data_Node& parent) {
         CpuStats stats;
         stats.readCpuTimes();
-        stats.printValues();
         stats.setXpathValues(session, parent);
         double loadavg[3];
         if (getloadavg(loadavg, 3) != -1) {
@@ -53,6 +52,9 @@ struct Callback {
                                    const char* request_xpath,
                                    uint32_t /* request_id */,
                                    libyang::S_Data_Node& parent) {
+        MemoryStats stats;
+        stats.readMemoryStats();
+        stats.setXpathValues(session, parent);
 
         return SR_ERR_OK;
     }

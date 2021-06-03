@@ -43,8 +43,7 @@ int sr_plugin_init_cb(sr_session_ctx_t* session, void** /*private_data*/) {
     theModel.sess = std::make_shared<Session>(session);
     theModel.subscription = std::make_shared<Subscribe>(theModel.sess);
     std::string cpu_state_xpath("/" + MetricsModel::moduleName + ":" + "metrics/cpu-state");
-    std::string memory_state_xpath("/" + MetricsModel::moduleName + ":" +
-                                   "metrics/memory/memory-state");
+    std::string memory_state_xpath("/" + MetricsModel::moduleName + ":" + "metrics/memory");
     try {
         theModel.subscription->oper_get_items_subscribe(MetricsModel::moduleName.c_str(),
                                                         &metrics::Callback::cpuStateCallback,
