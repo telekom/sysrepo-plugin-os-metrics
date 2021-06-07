@@ -1,6 +1,6 @@
 module dt-metrics {
   yang-version 1.1;
-  namespace "urn:ietf:params:xml:ns:dt-metrics";
+  namespace "http://terastrm.net/ns/yang/dt-metrics";
   prefix dt-metrics;
 
   organization
@@ -22,6 +22,10 @@ module dt-metrics {
     KIND, either express or implied. See the License for the
     specific language governing permissions and limitations
     under the License.";
+
+  revision 2021-06-07 {
+    description "Adjusted for DT internal review changes";
+  }
 
   revision 2021-05-21 {
     description "Initial version after PD - IF peer-review";
@@ -53,6 +57,7 @@ module dt-metrics {
           monitored.";
         key name;
         leaf name {
+          description "Threshold name";
           type string;
         }
         leaf threshold {
@@ -64,7 +69,7 @@ module dt-metrics {
     }
   }
 
-  grouping cpu-stats {
+  grouping cpu-times {
     leaf user {
       type percent;
       units "Percent";
@@ -115,16 +120,16 @@ module dt-metrics {
     }
   }
 
-  container metrics {
+  container system-metrics {
     description
       "Data nodes representing different types of metrics.";
 
-    container cpu-state {
+    container cpu-stats {
       config false;
       description
         "Data nodes representing CPU metrics.";
 
-      uses cpu-stats;
+      uses cpu-times;
 
       list cpu {
         description
@@ -135,7 +140,7 @@ module dt-metrics {
           type uint32;
         }
 
-        uses cpu-stats;
+        uses cpu-times;
       }
 
       container average-load {
@@ -163,65 +168,61 @@ module dt-metrics {
       }
     }
 
-    container filesystem-state {
-      description
-        "Data nodes representing filesystem metrics.";
-      list filesystem {
-        key "name";
-        leaf name {
-          type string;
-          description
-            "Name (handle) of filesystem device.";
-        }
-        leaf type {
-          config false;
-          type string;
-          description
-            "Type of filesystem.";
-        }
-        leaf total-blocks {
-          config false;
-          type uint64;
-          units "blocks";
-        }
-        leaf used-blocks {
-          config false;
-          type uint64;
-          units "blocks";
-        }
-        leaf avail-blocks {
-          config false;
-          type uint64;
-          units "blocks";
-        }
-        leaf blocksize {
-          config false;
-          type uint64;
-          units "Kilobytes";
-        }
-        leaf inode-used {
-          config false;
-          type percent;
-          units "Percent";
-          description
-            "The percentage of inodes that are used on a device.";
-        }
-        leaf space-used {
-          config false;
-          type percent;
-          units "Percent";
-          description
-            "The percentage of disk space that is being used on a device.";
-        }
-        leaf mount-point {
-          config false;
-          type string;
-          description
-            "The location the filesystem is mounted at.";
-        }
-
-        uses usage-notifications-group;
+    list filesystem {
+      key "mount-point";
+      leaf mount-point {
+        type string;
+        description
+          "The location the filesystem is mounted at.";
       }
+      leaf name {
+        config false;
+        type string;
+        description
+          "Name (handle) of filesystem device.";
+      }
+      leaf type {
+        config false;
+        type string;
+        description
+          "Type of filesystem.";
+      }
+      leaf total-blocks {
+        config false;
+        type uint64;
+        units "blocks";
+      }
+      leaf used-blocks {
+        config false;
+        type uint64;
+        units "blocks";
+      }
+      leaf avail-blocks {
+        config false;
+        type uint64;
+        units "blocks";
+      }
+      leaf blocksize {
+        config false;
+        type uint64;
+        units "Kilobytes";
+      }
+      leaf inode-used {
+        config false;
+        type percent;
+        units "Percent";
+        description
+          "The percentage of inodes that are used on a device.";
+      }
+      leaf space-used {
+        config false;
+        type percent;
+        units "Percent";
+        description
+          "The percentage of disk space that is being used on a device.";
+      }
+
+      uses usage-notifications-group;
     }
 
     container memory {
@@ -286,8 +287,9 @@ module dt-metrics {
       leaf used-buffers {
         config false;
         type uint64;
+        units "Megabytes";
         description
-          "Number of buffers being used by the kernel for block io.";
+          "Memory used for temporary storage for raw disk blocks.";
       }
       leaf used-cached {
         config false;
@@ -430,7 +432,7 @@ module dt-metrics {
       a configured threshold.";
     leaf threshold-name {
       type leafref {
-        path "/metrics/memory/usage-notifications/usage-thresholds/name";
+        path "/system-metrics/memory/usage-notifications/usage-thresholds/name";
       }
       description
         "Name of the usage-threshold.";
@@ -447,14 +449,14 @@ module dt-metrics {
     if-feature usage-notifications;
     description "Filesystem notification to be sent when a usage value crosses
       a configured threshold.";
-    leaf filesystem-name {
+    leaf filesystem-mount-point {
       type leafref {
-        path "/metrics/filesystem-state/filesystem/name";
+        path "/system-metrics/filesystem/mount-point";
       }
     }
     leaf threshold-name {
       type leafref {
-        path "/metrics/filesystem-state/filesystem/usage-notifications/usage-thresholds/name";
+        path "/system-metrics/filesystem/usage-notifications/usage-thresholds/name";
       }
       description
         "Name of the usage-threshold.";
