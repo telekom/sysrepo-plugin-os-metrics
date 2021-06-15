@@ -36,11 +36,14 @@ struct Callback {
         stats.setXpathValues(session, parent);
         double loadavg[3];
         if (getloadavg(loadavg, 3) != -1) {
-            setXpath(session, parent, "/dt-metrics:metrics/cpu-state/average-load/avg-1min-load",
+            setXpath(session, parent,
+                     "/dt-metrics:system-metrics/cpu-stats/average-load/avg-1min-load",
                      std::to_string(loadavg[0]));
-            setXpath(session, parent, "/dt-metrics:metrics/cpu-state/average-load/avg-5min-load",
+            setXpath(session, parent,
+                     "/dt-metrics:system-metrics/cpu-stats/average-load/avg-5min-load",
                      std::to_string(loadavg[1]));
-            setXpath(session, parent, "/dt-metrics:metrics/cpu-state/average-load/avg-15min-load",
+            setXpath(session, parent,
+                     "/dt-metrics:system-metrics/cpu-stats/average-load/avg-15min-load",
                      std::to_string(loadavg[2]));
         }
         return SR_ERR_OK;

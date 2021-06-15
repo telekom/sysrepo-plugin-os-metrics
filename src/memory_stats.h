@@ -49,42 +49,44 @@ struct MemoryStats {
     }
 
     void setXpathValues(sysrepo::S_Session session, libyang::S_Data_Node& parent) {
-        setXpath(session, parent, "/dt-metrics:metrics/memory/free",
+        setXpath(session, parent, "/dt-metrics:system-metrics/memory/free",
                  std::to_string(mFree / 1024ULL));
-        setXpath(session, parent, "/dt-metrics:metrics/memory/swap-free",
+        setXpath(session, parent, "/dt-metrics:system-metrics/memory/swap-free",
                  std::to_string(mSwapFree / 1024ULL));
-        setXpath(session, parent, "/dt-metrics:metrics/memory/swap-total",
+        setXpath(session, parent, "/dt-metrics:system-metrics/memory/swap-total",
                  std::to_string(mSwapTotal / 1024ULL));
-        setXpath(session, parent, "/dt-metrics:metrics/memory/swap-used",
+        setXpath(session, parent, "/dt-metrics:system-metrics/memory/swap-used",
                  std::to_string(mSwapUsed / 1024ULL));
-        setXpath(session, parent, "/dt-metrics:metrics/memory/total",
+        setXpath(session, parent, "/dt-metrics:system-metrics/memory/total",
                  std::to_string(mTotal / 1024ULL));
-        setXpath(session, parent, "/dt-metrics:metrics/memory/usable",
+        setXpath(session, parent, "/dt-metrics:system-metrics/memory/usable",
                  std::to_string(mUsable / 1024ULL));
-        setXpath(session, parent, "/dt-metrics:metrics/memory/used-buffers",
+        setXpath(session, parent, "/dt-metrics:system-metrics/memory/used-buffers",
                  std::to_string(mUsedBuffers / 1024ULL));
-        setXpath(session, parent, "/dt-metrics:metrics/memory/used-cached",
+        setXpath(session, parent, "/dt-metrics:system-metrics/memory/used-cached",
                  std::to_string(mUsedCached / 1024ULL));
-        setXpath(session, parent, "/dt-metrics:metrics/memory/used-shared",
+        setXpath(session, parent, "/dt-metrics:system-metrics/memory/used-shared",
                  std::to_string(mUsedShared / 1024ULL));
-        setXpath(session, parent, "/dt-metrics:metrics/memory/hugepages-total",
+        setXpath(session, parent, "/dt-metrics:system-metrics/memory/hugepages-total",
                  std::to_string(mHugePagesTotal));
-        setXpath(session, parent, "/dt-metrics:metrics/memory/hugepages-free",
+        setXpath(session, parent, "/dt-metrics:system-metrics/memory/hugepages-free",
                  std::to_string(mHugePagesFree));
-        setXpath(session, parent, "/dt-metrics:metrics/memory/hugepage-size",
+        setXpath(session, parent, "/dt-metrics:system-metrics/memory/hugepage-size",
                  std::to_string(mHugePageSize));
 
         if (mTotal != 0) {
             long double usable = mUsable / static_cast<long double>(mTotal) * 100.0;
             std::stringstream stream;
             stream << std::fixed << std::setprecision(2) << usable;
-            setXpath(session, parent, "/dt-metrics:metrics/memory/usable-perc", stream.str());
+            setXpath(session, parent, "/dt-metrics:system-metrics/memory/usable-perc",
+                     stream.str());
         }
         if (mSwapTotal != 0) {
             long double swapFree = mSwapFree / static_cast<long double>(mSwapTotal) * 100.0;
             std::stringstream stream;
             stream << std::fixed << std::setprecision(2) << swapFree;
-            setXpath(session, parent, "/dt-metrics:metrics/memory/swap-free-perc", stream.str());
+            setXpath(session, parent, "/dt-metrics:system-metrics/memory/swap-free-perc",
+                     stream.str());
         }
     }
 

@@ -47,6 +47,7 @@ struct CoreStats {
     void setXpathValues(sysrepo::S_Session session,
                         libyang::S_Data_Node& parent,
                         std::optional<size_t> index) {
+        std::string basePath("/dt-metrics:system-metrics/cpu-stats");
         std::string cpuPath;
         if (index) {
             cpuPath = "/cpu[id='" + std::to_string(index.value()) + "']";
@@ -54,41 +55,35 @@ struct CoreStats {
         std::stringstream stream;
         stream << std::fixed << std::setprecision(2)
                << mUser / static_cast<long double>(mTotal) * 100.0;
-        setXpath(session, parent, "/dt-metrics:metrics/cpu-state" + cpuPath + "/user",
-                 stream.str());
+        setXpath(session, parent, basePath + cpuPath + "/user", stream.str());
         stream = std::stringstream();
         stream << std::fixed << std::setprecision(2)
                << mSystem / static_cast<long double>(mTotal) * 100.0;
-        setXpath(session, parent, "/dt-metrics:metrics/cpu-state" + cpuPath + "/sys", stream.str());
+        setXpath(session, parent, basePath + cpuPath + "/sys", stream.str());
         stream = std::stringstream();
         stream << std::fixed << std::setprecision(2)
                << mNice / static_cast<long double>(mTotal) * 100.0;
-        setXpath(session, parent, "/dt-metrics:metrics/cpu-state" + cpuPath + "/nice",
-                 stream.str());
+        setXpath(session, parent, basePath + cpuPath + "/nice", stream.str());
         stream = std::stringstream();
         stream << std::fixed << std::setprecision(2)
                << mIdle / static_cast<long double>(mTotal) * 100.0;
-        setXpath(session, parent, "/dt-metrics:metrics/cpu-state" + cpuPath + "/idle",
-                 stream.str());
+        setXpath(session, parent, basePath + cpuPath + "/idle", stream.str());
         stream = std::stringstream();
         stream << std::fixed << std::setprecision(2)
                << mIowait / static_cast<long double>(mTotal) * 100.0;
-        setXpath(session, parent, "/dt-metrics:metrics/cpu-state" + cpuPath + "/wait",
-                 stream.str());
+        setXpath(session, parent, basePath + cpuPath + "/wait", stream.str());
         stream = std::stringstream();
         stream << std::fixed << std::setprecision(2)
                << mIrq / static_cast<long double>(mTotal) * 100.0;
-        setXpath(session, parent, "/dt-metrics:metrics/cpu-state" + cpuPath + "/irq", stream.str());
+        setXpath(session, parent, basePath + cpuPath + "/irq", stream.str());
         stream = std::stringstream();
         stream << std::fixed << std::setprecision(2)
                << mSoftirq / static_cast<long double>(mTotal) * 100.0;
-        setXpath(session, parent, "/dt-metrics:metrics/cpu-state" + cpuPath + "/softirq",
-                 stream.str());
+        setXpath(session, parent, basePath + cpuPath + "/softirq", stream.str());
         stream = std::stringstream();
         stream << std::fixed << std::setprecision(2)
                << mStolen / static_cast<long double>(mTotal) * 100.0;
-        setXpath(session, parent, "/dt-metrics:metrics/cpu-state" + cpuPath + "/stolen",
-                 stream.str());
+        setXpath(session, parent, basePath + cpuPath + "/stolen", stream.str());
     }
 
     void populateValues(std::vector<size_t> const& cpu_times) {
