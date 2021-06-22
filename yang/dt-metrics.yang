@@ -43,7 +43,7 @@ module dt-metrics {
     }
   }
 
-  grouping usage-notifications-group {
+  grouping usage-threshold-group {
     container usage-notifications {
       if-feature usage-notifications;
       leaf poll-interval {
@@ -52,7 +52,7 @@ module dt-metrics {
         default 60;
         units "seconds";
       }
-      list usage-thresholds {
+      list threshold {
         description "Configure thresholds for notifications for percentage values that are being
           monitored.";
         key name;
@@ -60,10 +60,31 @@ module dt-metrics {
           description "Threshold name";
           type string;
         }
-        leaf threshold {
+        leaf value {
           mandatory true;
           type percent;
-          units "Percent";
+          units "percent";
+        }
+      }
+    }
+  }
+
+  grouping threshold-notification-group {
+    leaf usage {
+      type percent;
+      units "Percent";
+      description
+        "Disk usage percentage.";
+    }
+    choice direction {
+      case rising {
+        leaf rising {
+          type empty;
+        }
+      }
+      case falling {
+        leaf falling {
+          type empty;
         }
       }
     }
@@ -123,26 +144,20 @@ module dt-metrics {
   container system-metrics {
     description
       "Data nodes representing different types of metrics.";
-
-    container cpu-stats {
+    container cpu-statistics {
       config false;
       description
         "Data nodes representing CPU metrics.";
-
       uses cpu-times;
-
       list cpu {
         description
           "Data nodes representing CPU core metrics.";
         key "id";
-
         leaf id {
           type uint32;
         }
-
         uses cpu-times;
       }
-
       container average-load {
         leaf avg-1min-load {
           type decimal64 {
@@ -168,163 +183,153 @@ module dt-metrics {
       }
     }
 
-    list filesystem {
-      key "mount-point";
-      leaf mount-point {
-        type string;
-        description
-          "The location the filesystem is mounted at.";
+    container filesystems {
+      description "Nodes representing filesystems on the server.";
+      list filesystem {
+        key "mount-point";
+        leaf mount-point {
+          type string;
+          description
+            "The location that the filesystem is mounted at.";
+        }
+        container usage-monitoring {
+          if-feature usage-notifications;
+          uses usage-threshold-group;
+        }
+        container statistics {
+          config false;
+          leaf name {
+            type string;
+            description
+              "Name (handle) of filesystem device.";
+          }
+          leaf type {
+            type string;
+            description
+              "Type of filesystem.";
+          }
+          leaf total-blocks {
+            type uint64;
+            units "blocks";
+          }
+          leaf used-blocks {
+            type uint64;
+            units "blocks";
+          }
+          leaf avail-blocks {
+            type uint64;
+            units "blocks";
+          }
+          leaf blocksize {
+            type uint64;
+            units "Kilobytes";
+          }
+          leaf inode-used {
+            type percent;
+            units "Percent";
+            description
+              "The percentage of inodes that are used on a device.";
+          }
+          leaf space-used {
+            type percent;
+            units "Percent";
+            description
+              "The percentage of disk space that is being used on a device.";
+          }
+        }
       }
-      leaf name {
-        config false;
-        type string;
-        description
-          "Name (handle) of filesystem device.";
-      }
-      leaf type {
-        config false;
-        type string;
-        description
-          "Type of filesystem.";
-      }
-      leaf total-blocks {
-        config false;
-        type uint64;
-        units "blocks";
-      }
-      leaf used-blocks {
-        config false;
-        type uint64;
-        units "blocks";
-      }
-      leaf avail-blocks {
-        config false;
-        type uint64;
-        units "blocks";
-      }
-      leaf blocksize {
-        config false;
-        type uint64;
-        units "Kilobytes";
-      }
-      leaf inode-used {
-        config false;
-        type percent;
-        units "Percent";
-        description
-          "The percentage of inodes that are used on a device.";
-      }
-      leaf space-used {
-        config false;
-        type percent;
-        units "Percent";
-        description
-          "The percentage of disk space that is being used on a device.";
-      }
-
-      uses usage-notifications-group;
     }
 
     container memory {
       description
         "Data nodes representing RAM memory metrics.";
-      leaf free {
-        config false;
-        type uint64;
-        units "Megabytes";
-        description
-          "Megabytes of free memory.";
+      container usage-monitoring {
+        uses usage-threshold-group;
       }
-      leaf swap-free-perc {
+      container statistics {
         config false;
-        type percent;
-        units "Percent";
-        description
-          "Percentage of free swap memory that is free.";
+        leaf free {
+          type uint64;
+          units "Megabytes";
+          description
+            "Megabytes of free memory.";
+        }
+        leaf swap-free-perc {
+          type percent;
+          units "Percent";
+          description
+            "Percentage of free swap memory that is free.";
+        }
+        leaf swap-free {
+          type uint64;
+          units "Megabytes";
+          description
+            "Megabytes of free swap memory that is free.";
+        }
+        leaf swap-total {
+          type uint64;
+          units "Megabytes";
+          description
+            "Megabytes of total physical swap memory.";
+        }
+        leaf swap-used {
+          type uint64;
+          units "Megabytes";
+          description
+            "Megabytes of total swap memory used.";
+        }
+        leaf total {
+          type uint64;
+          units "Megabytes";
+          description
+            "Total megabytes of memory.";
+        }
+        leaf usable {
+          type uint64;
+          units "Megabytes";
+          description
+            "Total megabytes of usable memory.";
+        }
+        leaf usable-perc {
+          type percent;
+          units "Percent";
+          description
+            "Percentage of total memory that is usable.";
+        }
+        leaf used-buffers {
+          type uint64;
+          units "Megabytes";
+          description
+            "Memory used for temporary storage for raw disk blocks.";
+        }
+        leaf used-cached {
+          type uint64;
+          units "Megabytes";
+          description
+            "Memory used for the page cache.";
+        }
+        leaf used-shared {
+          type uint64;
+          units "Megabytes";
+          description
+            "Memory shared between separate processes and typically used for inter-process communication.";
+        }
+        leaf hugepages-total {
+          type uint64;
+          description
+            "Total number of hugepages.";
+        }
+        leaf hugepages-free {
+          type uint64;
+          description
+            "Number of free hugepages.";
+        }
+        leaf hugepage-size {
+          type uint64;
+          units "Kilobytes";
+          description "Size of a hugepage.";
+        }
       }
-      leaf swap-free {
-        config false;
-        type uint64;
-        units "Megabytes";
-        description
-          "Megabytes of free swap memory that is free.";
-      }
-      leaf swap-total {
-        config false;
-        type uint64;
-        units "Megabytes";
-        description
-          "Megabytes of total physical swap memory.";
-      }
-      leaf swap-used {
-        config false;
-        type uint64;
-        units "Megabytes";
-        description
-          "Megabytes of total swap memory used.";
-      }
-      leaf total {
-        config false;
-        type uint64;
-        units "Megabytes";
-        description
-          "Total megabytes of memory.";
-      }
-      leaf usable {
-        config false;
-        type uint64;
-        units "Megabytes";
-        description
-          "Total megabytes of usable memory.";
-      }
-      leaf usable-perc {
-        config false;
-        type percent;
-        units "Percent";
-        description
-          "Percentage of total memory that is usable.";
-      }
-      leaf used-buffers {
-        config false;
-        type uint64;
-        units "Megabytes";
-        description
-          "Memory used for temporary storage for raw disk blocks.";
-      }
-      leaf used-cached {
-        config false;
-        type uint64;
-        units "Megabytes";
-        description
-          "Memory used for the page cache.";
-      }
-      leaf used-shared {
-        config false;
-        type uint64;
-        units "Megabytes";
-        description
-          "Memory shared between separate processes and typically used for inter-process communication.";
-      }
-      leaf hugepages-total {
-        config false;
-        type uint64;
-        description
-          "Total number of hugepages.";
-      }
-      leaf hugepages-free {
-        config false;
-        type uint64;
-        description
-          "Number of free hugepages.";
-      }
-      leaf hugepage-size {
-        config false;
-        type uint64;
-        units "Kilobytes";
-        description "Size of a hugepage.";
-      }
-
-      uses usage-notifications-group;
     }
 
     container processes {
@@ -338,7 +343,6 @@ module dt-metrics {
           description
             "Process identifier";
         }
-
         container memory {
           leaf real {
             type uint64;
@@ -359,7 +363,6 @@ module dt-metrics {
               "Amount of all the memory a process can access, including swapped, physical, and shared in megabytes.";
           }
         }
-
         container io {
           leaf read-count {
             type uint64;
@@ -384,39 +387,33 @@ module dt-metrics {
               "Kilobytes written by a process.";
           }
         }
-
         leaf thread-count {
           type uint64;
           description
             "Number of threads a process is using.";
         }
-
         leaf cpu {
           type percent;
           units "Percent";
           description
             "Percentage of cpu being consumed by a process.";
         }
-
         leaf open-file-descriptors {
           type uint64;
           description
             "Number of files being used by a process.";
         }
-
         leaf open-file-descriptors-perc {
           type percent;
           units "Percent";
           description
             "Number of files being used by a process as a percentage of the total file descriptors allocated to the process.";
         }
-
         leaf involuntary-ctx-switches {
           type uint64;
           description
             "Number of involuntary context switches for a process.";
         }
-
         leaf voluntary-ctx-switches {
           type uint64;
           description
@@ -426,46 +423,36 @@ module dt-metrics {
     }
   }
 
-  notification memory-threshold-exceeded {
+  notification memory-threshold-crossed {
     if-feature usage-notifications;
     description "Memory notification to be sent when a usage value crosses
       a configured threshold.";
     leaf threshold-name {
       type leafref {
-        path "/system-metrics/memory/usage-notifications/usage-thresholds/name";
+        path "/system-metrics/memory/usage-monitoring/usage-notifications/threshold/name";
       }
       description
         "Name of the usage-threshold.";
     }
-    leaf usage {
-      type percent;
-      units "Percent";
-      description
-        "Memory usage percentage.";
-    }
+    uses threshold-notification-group;
   }
 
-  notification filesystem-threshold-exceeded {
+  notification filesystem-threshold-crossed {
     if-feature usage-notifications;
     description "Filesystem notification to be sent when a usage value crosses
       a configured threshold.";
-    leaf filesystem-mount-point {
+    leaf mount-point {
       type leafref {
-        path "/system-metrics/filesystem/mount-point";
+        path "/system-metrics/filesystems/filesystem/mount-point";
       }
     }
-    leaf threshold-name {
+    leaf name {
       type leafref {
-        path "/system-metrics/filesystem/usage-notifications/usage-thresholds/name";
+        path "/system-metrics/filesystems/filesystem/usage-monitoring/usage-notifications/threshold/name";
       }
       description
         "Name of the usage-threshold.";
     }
-    leaf usage {
-      type percent;
-      units "Percent";
-      description
-        "Disk usage percentage.";
-    }
+    uses threshold-notification-group;
   }
 }
