@@ -1,0 +1,10 @@
+<system-metrics xmlns="http://terastrm.net/ns/yang/dt-metrics">
+<memory>
+    <usage-monitoring>
+        <threshold>
+            <name>tooHigh</name>
+            <value>80</value>
+        </threshold>
+    </usage-monitoring>
+</memory>
+</system-metrics>

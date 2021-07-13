@@ -19,6 +19,7 @@
 #define CALLBACK_H
 
 #include <cpu_stats.h>
+#include <filesystem_stats.h>
 #include <memory_stats.h>
 
 namespace metrics {
@@ -26,9 +27,9 @@ namespace metrics {
 struct Callback {
 
     static int cpuStateCallback(sysrepo::S_Session session,
-                                const char* module_name,
+                                const char* /* module_name */,
                                 const char* /* path */,
-                                const char* request_xpath,
+                                const char* /* request_xpath */,
                                 uint32_t /* request_id */,
                                 libyang::S_Data_Node& parent) {
         CpuStats stats;
@@ -37,28 +38,40 @@ struct Callback {
         double loadavg[3];
         if (getloadavg(loadavg, 3) != -1) {
             setXpath(session, parent,
-                     "/dt-metrics:system-metrics/cpu-stats/average-load/avg-1min-load",
+                     "/dt-metrics:system-metrics/cpu-statistics/average-load/avg-1min-load",
                      std::to_string(loadavg[0]));
             setXpath(session, parent,
-                     "/dt-metrics:system-metrics/cpu-stats/average-load/avg-5min-load",
+                     "/dt-metrics:system-metrics/cpu-statistics/average-load/avg-5min-load",
                      std::to_string(loadavg[1]));
             setXpath(session, parent,
-                     "/dt-metrics:system-metrics/cpu-stats/average-load/avg-15min-load",
+                     "/dt-metrics:system-metrics/cpu-statistics/average-load/avg-15min-load",
                      std::to_string(loadavg[2]));
         }
         return SR_ERR_OK;
     }
 
     static int memoryStateCallback(sysrepo::S_Session session,
-                                   const char* module_name,
+                                   const char* /* module_name */,
                                    const char* /* path */,
-                                   const char* request_xpath,
+                                   const char* /* request_xpath */,
                                    uint32_t /* request_id */,
                                    libyang::S_Data_Node& parent) {
         MemoryStats stats;
         stats.readMemoryStats();
         stats.setXpathValues(session, parent);
+        return SR_ERR_OK;
+    }
 
+    static int filesystemStateCallback(sysrepo::S_Session session,
+                                       const char* module_name,
+                                       const char* /* path */,
+                                       const char* request_xpath,
+                                       uint32_t /* request_id */,
+                                       libyang::S_Data_Node& parent) {
+        // parent->insert(sysrepo_get_session_->get_data(setXpath.c_str())->child());
+        FilesystemStats stats;
+        stats.readFilesystemStats();
+        stats.setXpathValues(session, parent);
         return SR_ERR_OK;
     }
 };

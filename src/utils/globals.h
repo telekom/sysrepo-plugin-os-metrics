@@ -18,10 +18,13 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
+#define FILESYSTEM_STATS_LOCATION "/tmp/df_output1.tmp"
+#define FILESYSTEM_STATS_LOCATION2 "/tmp/df_output2.tmp"
+
 #include <sysrepo-cpp/Session.hpp>
 
 static void logMessage(sr_log_level_t log, std::string msg) {
-    msg = "IETF-Hardware: " + msg;
+    msg = "DT-Metrics: " + msg;
     switch (log) {
     case SR_LL_ERR:
         SRP_LOG_ERRMSG(msg.c_str());

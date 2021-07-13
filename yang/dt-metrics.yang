@@ -258,7 +258,7 @@ module dt-metrics {
           description
             "Percentage of free swap memory that is free.";
         }
-        leaf swap-free {
+        leaf swap-free-mb {
           type uint64;
           units "Megabytes";
           description
@@ -282,7 +282,7 @@ module dt-metrics {
           description
             "Total megabytes of memory.";
         }
-        leaf usable {
+        leaf usable-mb {
           type uint64;
           units "Megabytes";
           description

@@ -47,7 +47,7 @@ struct CoreStats {
     void setXpathValues(sysrepo::S_Session session,
                         libyang::S_Data_Node& parent,
                         std::optional<size_t> index) {
-        std::string basePath("/dt-metrics:system-metrics/cpu-stats");
+        std::string basePath("/dt-metrics:system-metrics/cpu-statistics");
         std::string cpuPath;
         if (index) {
             cpuPath = "/cpu[id='" + std::to_string(index.value()) + "']";
