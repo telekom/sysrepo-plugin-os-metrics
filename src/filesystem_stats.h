@@ -77,6 +77,14 @@ struct Filesystem {
 
 struct FilesystemStats {
 
+    static FilesystemStats& getInstance() {
+        static FilesystemStats instance;
+        return instance;
+    }
+
+    FilesystemStats(FilesystemStats const&) = delete;
+    void operator=(FilesystemStats const&) = delete;
+
     void readFilesystemStats() {
         int rc = system("/bin/df -T > " FILESYSTEM_STATS_LOCATION
                         "&& /bin/df -i > " FILESYSTEM_STATS_LOCATION2);
@@ -124,6 +132,16 @@ struct FilesystemStats {
         }
     }
 
+    std::optional<long double> getUsage(std::string mountPoint) {
+        readFilesystemStats();
+        std::unordered_map<std::string, Filesystem>::iterator itr;
+        if ((itr = fsMap.find(mountPoint)) != fsMap.end()) {
+            return itr->second.spaceUsed;
+        } else {
+            return std::nullopt;
+        }
+    }
+
     void printValues() {
         for (auto const& v : fsMap) {
             v.second.printValues();
@@ -137,7 +155,9 @@ struct FilesystemStats {
         }
     }
 
-    std::map<std::string, Filesystem> fsMap;
+private:
+    FilesystemStats() = default;
+    std::unordered_map<std::string, Filesystem> fsMap;
 };
 
 }  // namespace metrics

@@ -31,22 +31,13 @@ namespace metrics {
 
 struct MemoryStats {
 
-    MemoryStats()
-        : mFree(0), mSwapFree(0), mSwapTotal(0), mSwapUsed(0), mTotal(0), mUsable(0),
-          mUsedBuffers(0), mUsedCached(0), mUsedShared(0), mHugePagesTotal(0), mHugePagesFree(0),
-          mHugePageSize(0) {
-        assignMap = {{"MemTotal:", [this](uint64_t value) { mTotal = value; }},
-                     {"MemFree:", [this](uint64_t value) { mFree = value; }},
-                     {"MemAvailable:", [this](uint64_t value) { mUsable = value; }},
-                     {"SwapTotal:", [this](uint64_t value) { mSwapTotal = value; }},
-                     {"SwapFree:", [this](uint64_t value) { mSwapFree = value; }},
-                     {"Shmem:", [this](uint64_t value) { mUsedShared = value; }},
-                     {"Cached:", [this](uint64_t value) { mUsedCached = value; }},
-                     {"Buffers:", [this](uint64_t value) { mUsedBuffers = value; }},
-                     {"HugePages_Total:", [this](uint64_t value) { mHugePagesTotal = value; }},
-                     {"HugePages_Free:", [this](uint64_t value) { mHugePagesFree = value; }},
-                     {"Hugepagesize:", [this](uint64_t value) { mHugePageSize = value; }}};
+    static MemoryStats& getInstance() {
+        static MemoryStats instance;
+        return instance;
     }
+
+    MemoryStats(MemoryStats const&) = delete;
+    void operator=(MemoryStats const&) = delete;
 
     void setXpathValues(sysrepo::S_Session session, libyang::S_Data_Node& parent) {
         std::string memoryPath("/dt-metrics:system-metrics/memory/statistics/");
@@ -97,6 +88,11 @@ struct MemoryStats {
         mSwapUsed = mSwapTotal - mSwapFree;
     }
 
+    long double getUsage() {
+        readMemoryStats();
+        return 100.0 - (mUsable / static_cast<long double>(mTotal) * 100.0);
+    }
+
     void printValues() {
         std::cout << "MemTotal:" << mTotal << std::endl;
         std::cout << "MemFree:" << mFree << std::endl;
@@ -124,6 +120,24 @@ struct MemoryStats {
     uint64_t mHugePagesTotal;
     uint64_t mHugePagesFree;
     uint64_t mHugePageSize;
+
+private:
+    MemoryStats()
+        : mFree(0), mSwapFree(0), mSwapTotal(0), mSwapUsed(0), mTotal(0), mUsable(0),
+          mUsedBuffers(0), mUsedCached(0), mUsedShared(0), mHugePagesTotal(0), mHugePagesFree(0),
+          mHugePageSize(0) {
+        assignMap = {{"MemTotal:", [this](uint64_t value) { mTotal = value; }},
+                     {"MemFree:", [this](uint64_t value) { mFree = value; }},
+                     {"MemAvailable:", [this](uint64_t value) { mUsable = value; }},
+                     {"SwapTotal:", [this](uint64_t value) { mSwapTotal = value; }},
+                     {"SwapFree:", [this](uint64_t value) { mSwapFree = value; }},
+                     {"Shmem:", [this](uint64_t value) { mUsedShared = value; }},
+                     {"Cached:", [this](uint64_t value) { mUsedCached = value; }},
+                     {"Buffers:", [this](uint64_t value) { mUsedBuffers = value; }},
+                     {"HugePages_Total:", [this](uint64_t value) { mHugePagesTotal = value; }},
+                     {"HugePages_Free:", [this](uint64_t value) { mHugePagesFree = value; }},
+                     {"Hugepagesize:", [this](uint64_t value) { mHugePageSize = value; }}};
+    }
 
     std::unordered_map<std::string, std::function<void(uint64_t)>> assignMap;
 };

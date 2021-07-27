@@ -46,9 +46,18 @@ int sr_plugin_init_cb(sr_session_ctx_t* session, void** /*private_data*/) {
                                 "system-metrics/cpu-statistics");
     std::string memory_state_xpath("/" + MetricsModel::moduleName + ":" +
                                    "system-metrics/memory/statistics");
+    std::string memory_config_xpath("/" + MetricsModel::moduleName + ":" + "system-metrics/memory");
     std::string filesystem_state_xpath("/" + MetricsModel::moduleName + ":" +
                                        "system-metrics/filesystems");
+    std::string processes_state_spath("/" + MetricsModel::moduleName + ":" +
+                                      "system-metrics/processes");
     try {
+        theModel.subscription->module_change_subscribe(
+            MetricsModel::moduleName.c_str(), &metrics::Callback::memoryConfigCallback,
+            memory_config_xpath.c_str(), 0, SR_SUBSCR_ENABLED | SR_SUBSCR_DONE_ONLY);
+        theModel.subscription->module_change_subscribe(
+            MetricsModel::moduleName.c_str(), &metrics::Callback::filesystemsConfigCallback,
+            filesystem_state_xpath.c_str(), 0, SR_SUBSCR_ENABLED | SR_SUBSCR_DONE_ONLY);
         theModel.subscription->oper_get_items_subscribe(MetricsModel::moduleName.c_str(),
                                                         &metrics::Callback::cpuStateCallback,
                                                         cpu_state_xpath.c_str());
@@ -58,6 +67,9 @@ int sr_plugin_init_cb(sr_session_ctx_t* session, void** /*private_data*/) {
         theModel.subscription->oper_get_items_subscribe(MetricsModel::moduleName.c_str(),
                                                         &metrics::Callback::filesystemStateCallback,
                                                         filesystem_state_xpath.c_str());
+        theModel.subscription->oper_get_items_subscribe(MetricsModel::moduleName.c_str(),
+                                                        &metrics::Callback::processesStateCallback,
+                                                        processes_state_spath.c_str());
     } catch (std::exception const& e) {
         logMessage(SR_LL_ERR, std::string("sr_plugin_init_cb: ") + e.what());
         theModel.subscription.reset();

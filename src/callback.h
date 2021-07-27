@@ -21,6 +21,8 @@
 #include <cpu_stats.h>
 #include <filesystem_stats.h>
 #include <memory_stats.h>
+#include <process_stats.h>
+#include <threshold_manager.h>
 
 namespace metrics {
 
@@ -56,9 +58,8 @@ struct Callback {
                                    const char* /* request_xpath */,
                                    uint32_t /* request_id */,
                                    libyang::S_Data_Node& parent) {
-        MemoryStats stats;
-        stats.readMemoryStats();
-        stats.setXpathValues(session, parent);
+        MemoryStats::getInstance().readMemoryStats();
+        MemoryStats::getInstance().setXpathValues(session, parent);
         return SR_ERR_OK;
     }
 
@@ -69,10 +70,67 @@ struct Callback {
                                        uint32_t /* request_id */,
                                        libyang::S_Data_Node& parent) {
         // parent->insert(sysrepo_get_session_->get_data(setXpath.c_str())->child());
-        FilesystemStats stats;
-        stats.readFilesystemStats();
-        stats.setXpathValues(session, parent);
+        FilesystemStats::getInstance().readFilesystemStats();
+        FilesystemStats::getInstance().setXpathValues(session, parent);
         return SR_ERR_OK;
+    }
+
+    static int processesStateCallback(sysrepo::S_Session session,
+                                      const char* module_name,
+                                      const char* /* path */,
+                                      const char* request_xpath,
+                                      uint32_t /* request_id */,
+                                      libyang::S_Data_Node& parent) {
+        ProcessStats stats;
+        stats.readAndSet(session, parent);
+        return SR_ERR_OK;
+    }
+
+    static int memoryConfigCallback(sysrepo::S_Session session,
+                                    const char* module_name,
+                                    const char* /*xpath*/,
+                                    sr_event_t /*event*/,
+                                    uint32_t /*request_id*/) {
+        printCurrentConfig(session, module_name, "system-metrics/memory//*");
+        {
+            std::lock_guard<std::mutex> lk(MemoryMonitoring::getInstance().mNotificationMtx);
+            MemoryMonitoring::getInstance().notify();
+            MemoryMonitoring::getInstance().populateConfigData(session, module_name);
+        }
+        MemoryMonitoring::getInstance().startThread();
+        return SR_ERR_OK;
+    }
+
+    static int filesystemsConfigCallback(sysrepo::S_Session session,
+                                         const char* module_name,
+                                         const char* /*xpath*/,
+                                         sr_event_t /*event*/,
+                                         uint32_t /*request_id*/) {
+        printCurrentConfig(session, module_name, "system-metrics/filesystems//*");
+        {
+            std::lock_guard<std::mutex> lk(FilesystemMonitoring::getInstance().mNotificationMtx);
+            FilesystemMonitoring::getInstance().notify();
+            FilesystemMonitoring::getInstance().populateConfigData(session, module_name);
+        }
+        FilesystemMonitoring::getInstance().startThreads();
+        return SR_ERR_OK;
+    }
+
+    static void printCurrentConfig(sysrepo::S_Session& session,
+                                   char const* module_name,
+                                   std::string const& node) {
+        try {
+            std::string xpath(std::string("/") + module_name + std::string(":") + node);
+            auto values = session->get_items(xpath.c_str());
+            if (values == nullptr)
+                return;
+
+            for (unsigned int i = 0; i < values->val_cnt(); i++)
+                logMessage(SR_LL_DBG, values->val(i)->to_string());
+
+        } catch (const std::exception& e) {
+            logMessage(SR_LL_WRN, e.what());
+        }
     }
 };
 
