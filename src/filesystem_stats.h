@@ -115,6 +115,8 @@ struct FilesystemStats {
                 fs.usedBlocks = fs.totalBlocks - fs.availableBlocks;
                 inodesTotal = buf.f_files;
                 inodesUsed = inodesTotal - buf.f_ffree;
+            } else {
+                logMessage(SR_LL_ERR, "statvfs call failed");
             }
             if (inodesTotal == 0) {
                 fs.inodeUsed = 0;
@@ -151,6 +153,7 @@ struct FilesystemStats {
     }
 
     void setXpathValues(sysrepo::S_Session session, libyang::S_Data_Node& parent) {
+        logMessage(SR_LL_DBG, "Setting xpath values for filesystems statistics");
         for (auto const& v : fsMap) {
             v.second.setXpathValues(session, parent);
         }

@@ -48,6 +48,8 @@ struct Callback {
             setXpath(session, parent,
                      "/dt-metrics:system-metrics/cpu-statistics/average-load/avg-15min-load",
                      std::to_string(loadavg[2]));
+        } else {
+            logMessage(SR_LL_ERR, "getloadavg call failed");
         }
         return SR_ERR_OK;
     }
@@ -82,8 +84,7 @@ struct Callback {
                                       const char* request_xpath,
                                       uint32_t /* request_id */,
                                       libyang::S_Data_Node& parent) {
-        ProcessStats stats;
-        stats.readAndSetAll(session, parent);
+        ProcessStats::getInstance().readAndSetAll(session, parent);
         return SR_ERR_OK;
     }
 
@@ -93,12 +94,17 @@ struct Callback {
                                     sr_event_t /*event*/,
                                     uint32_t /*request_id*/) {
         printCurrentConfig(session, module_name, "system-metrics/memory//*");
-        {
-            std::lock_guard<std::mutex> lk(MemoryMonitoring::getInstance().mNotificationMtx);
-            MemoryMonitoring::getInstance().notify();
-            MemoryMonitoring::getInstance().populateConfigData(session, module_name);
+        if (session->get_context()->get_module(module_name)->feature_state("usage-notifications") ==
+            1) {
+            {
+                std::lock_guard<std::mutex> lk(MemoryMonitoring::getInstance().mNotificationMtx);
+                MemoryMonitoring::getInstance().notify();
+                MemoryMonitoring::getInstance().populateConfigData(session, module_name);
+            }
+            MemoryMonitoring::getInstance().startThread();
+        } else {
+            logMessage(SR_LL_WRN, "Feature not enabled: usage-notifications");
         }
-        MemoryMonitoring::getInstance().startThread();
         return SR_ERR_OK;
     }
 
@@ -108,12 +114,18 @@ struct Callback {
                                          sr_event_t /*event*/,
                                          uint32_t /*request_id*/) {
         printCurrentConfig(session, module_name, "system-metrics/filesystems//*");
-        {
-            std::lock_guard<std::mutex> lk(FilesystemMonitoring::getInstance().mNotificationMtx);
-            FilesystemMonitoring::getInstance().notify();
-            FilesystemMonitoring::getInstance().populateConfigData(session, module_name);
+        if (session->get_context()->get_module(module_name)->feature_state("usage-notifications") ==
+            1) {
+            {
+                std::lock_guard<std::mutex> lk(
+                    FilesystemMonitoring::getInstance().mNotificationMtx);
+                FilesystemMonitoring::getInstance().notify();
+                FilesystemMonitoring::getInstance().populateConfigData(session, module_name);
+            }
+            FilesystemMonitoring::getInstance().startThreads();
+        } else {
+            logMessage(SR_LL_WRN, "Feature not enabled: usage-notifications");
         }
-        FilesystemMonitoring::getInstance().startThreads();
         return SR_ERR_OK;
     }
 

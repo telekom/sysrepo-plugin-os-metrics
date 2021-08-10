@@ -40,6 +40,7 @@ struct MemoryStats {
     void operator=(MemoryStats const&) = delete;
 
     void setXpathValues(sysrepo::S_Session session, libyang::S_Data_Node& parent) {
+        logMessage(SR_LL_DBG, "Setting xpath values for memory statistics");
         std::string memoryPath("/dt-metrics:system-metrics/memory/statistics/");
         setXpath(session, parent, memoryPath + "free", std::to_string(mFree / 1024ULL));
         setXpath(session, parent, memoryPath + "swap-free-mb", std::to_string(mSwapFree / 1024ULL));

@@ -125,6 +125,7 @@ struct CpuStats : public CoreStats {
     }
 
     void setXpathValues(sysrepo::S_Session session, libyang::S_Data_Node& parent) {
+        logMessage(SR_LL_DBG, "Setting xpath values for cpu statistics");
         CoreStats::setXpathValues(session, parent, std::nullopt);
         for (size_t i = 0; i < mCoreTimes.size(); i++) {
             mCoreTimes[i].setXpathValues(session, parent, i);

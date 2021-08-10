@@ -33,6 +33,14 @@ struct ProcessStats {
     using setFunction_t = std::function<void(
         uint64_t, sysrepo::S_Session, libyang::S_Data_Node&, std::string const&, int32_t)>;
 
+    static ProcessStats& getInstance() {
+        static ProcessStats instance;
+        return instance;
+    }
+
+    ProcessStats(ProcessStats const&) = delete;
+    void operator=(ProcessStats const&) = delete;
+
     static std::unordered_map<std::string, setFunction_t> getAssignMap() {
         static std::unordered_map<std::string, setFunction_t> _{
             {"syscr:",
@@ -204,6 +212,9 @@ struct ProcessStats {
     /// @brief Cached cpu usage value used where sigar is not present
     /// values are total_cpu_time, proc_user_time, proc_sys_time
     std::unordered_map<int32_t, std::tuple<size_t, size_t, size_t>> cached_cpu_values_;
+
+private:
+    ProcessStats() = default;
 };
 
 }  // namespace metrics
