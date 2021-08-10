@@ -1,7 +1,7 @@
 <system-metrics xmlns="http://terastrm.net/ns/yang/dt-metrics">
 <memory>
     <usage-monitoring>
-        <poll-interval>10</poll-interval>
+        <poll-interval>30</poll-interval>
         <threshold>
             <name>tooHigh</name>
             <value>50</value>
@@ -16,21 +16,20 @@
     <filesystem>
         <mount-point>/</mount-point>
         <usage-monitoring>
-            <poll-interval>3</poll-interval>
+            <poll-interval>15</poll-interval>
             <threshold>
                 <name>highfs1</name>
                 <value>60</value>
             </threshold>
             <threshold>
                 <name>highfs2</name>
-                <value>80</value>
+                <value>50</value>
             </threshold>
         </usage-monitoring>
     </filesystem>
     <filesystem>
         <mount-point>/snap/core20/1081</mount-point>
         <usage-monitoring>
-            <poll-interval>10</poll-interval>
             <threshold>
                 <name>highfs3</name>
                 <value>45</value>

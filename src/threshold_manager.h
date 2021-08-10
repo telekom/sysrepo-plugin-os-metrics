@@ -40,12 +40,52 @@ using libyang::Schema_Node_Leaf;
 using libyang::Schema_Node_Leaflist;
 using libyang::Schema_Node_List;
 
+struct Threshold {
+    Threshold(long double val = 0.0) : value(val), rising(false), falling(false){};
+    long double value;
+    bool rising;
+    bool falling;
+};
+
 struct UsageMonitoring {
-    using thresholdMap_t = std::unordered_map<std::string, long double>;
+    using thresholdMap_t = std::unordered_map<std::string, Threshold>;
     using fsThresholdTuple_t = std::tuple<uint32_t, thresholdMap_t>;
 
     void notify() {
         mCV.notify_all();
+    }
+
+    void checkAndTriggerNotification(std::string const& sensName,
+                                     Threshold const& thr,
+                                     long double value,
+                                     std::string const& type,
+                                     std::string mountPoint = std::string()) {
+        std::string notifPath("/dt-metrics:" + type + "-threshold-crossed");
+        /* connect to sysrepo */
+        auto conn = std::make_shared<sysrepo::Connection>();
+
+        /* start session */
+        auto sess = std::make_shared<sysrepo::Session>(conn);
+
+        sysrepo::S_Vals in_vals;
+        if (type == "memory") {
+            in_vals = std::make_shared<sysrepo::Vals>(3);
+        } else {
+            in_vals = std::make_shared<sysrepo::Vals>(4);
+            in_vals->val(3)->set((notifPath + "/mount-point").c_str(), mountPoint.c_str(),
+                                 SR_STRING_T);
+        }
+        in_vals->val(0)->set((notifPath + "/name").c_str(), sensName.c_str(), SR_STRING_T);
+        if (value >= thr.value) {
+            in_vals->val(1)->set((notifPath + "/rising").c_str(), nullptr, SR_LEAF_EMPTY_T);
+        } else {
+            in_vals->val(1)->set((notifPath + "/falling").c_str(), nullptr, SR_LEAF_EMPTY_T);
+        }
+        std::stringstream stream;
+        stream << std::fixed << std::setprecision(2) << value;
+        in_vals->val(2)->set((notifPath + "/usage").c_str(), stream.str().c_str(), SR_STRING_T);
+
+        sess->event_notif_send(notifPath.c_str(), in_vals);
     }
 
     std::mutex mNotificationMtx;
@@ -87,6 +127,7 @@ struct MemoryMonitoring : public UsageMonitoring {
             for (auto const& [name, thrValue] : mMemoryThesholds) {
                 logMessage(SR_LL_DBG, std::string("Trigger notification for: ") + name + ": " +
                                           std::to_string(value));
+                checkAndTriggerNotification(name, thrValue, value, "memory");
             }
         }
     }
@@ -94,7 +135,7 @@ struct MemoryMonitoring : public UsageMonitoring {
     void populateConfigData(sysrepo::S_Session& session, char const* module_name) {
         std::string const data_xpath(std::string("/") + module_name + ":system-metrics/memory");
         S_Data_Node toplevel(session->get_data(data_xpath.c_str()));
-        std::shared_ptr<std::pair<std::string, long double>> threshold;
+        std::shared_ptr<std::pair<std::string, Threshold>> threshold;
         mMemoryThesholds.clear();
         for (S_Data_Node& root : toplevel->tree_for()) {
             for (S_Data_Node const& node : root->tree_dfs()) {
@@ -110,11 +151,11 @@ struct MemoryMonitoring : public UsageMonitoring {
                     Data_Node_Leaf_List leaf(node);
                     Schema_Node_Leaf sleaf(schema);
                     if (sleaf.is_key()) {
-                        threshold = std::make_shared<std::pair<std::string, long double>>();
+                        threshold = std::make_shared<std::pair<std::string, Threshold>>();
                         threshold->first = leaf.value_str();
                     } else if (std::string(sleaf.name()) == "value") {
-                        threshold->second = leaf.value()->dec64().value /
-                                            std::pow(10, leaf.value()->dec64().digits);
+                        threshold->second.value = leaf.value()->dec64().value /
+                                                  std::pow(10, leaf.value()->dec64().digits);
                     }
 
                     if (std::string(sleaf.name()) == "poll-interval") {
@@ -129,6 +170,17 @@ struct MemoryMonitoring : public UsageMonitoring {
         }
         if (threshold) {
             mMemoryThesholds[threshold->first] = threshold->second;
+        }
+    }
+
+    void setXpaths(sysrepo::S_Session session, libyang::S_Data_Node& parent) {
+        std::string configPath("/dt-metrics:system-metrics/memory/usage-monitoring/");
+        setXpath(session, parent, configPath + "poll-interval", std::to_string(pollInterval));
+        for (auto const& [name, thr] : mMemoryThesholds) {
+            std::stringstream stream;
+            stream << std::fixed << std::setprecision(2) << thr.value;
+            setXpath(session, parent, configPath + "threshold[name='" + name + "']/value",
+                     stream.str());
         }
     }
 
@@ -154,11 +206,7 @@ struct FilesystemMonitoring : public UsageMonitoring {
 
     void notifyAndJoin() {
         mCV.notify_all();
-        for (auto& [name, thread] : mFsThreads) {
-            if (thread.joinable()) {
-                thread.join();
-            }
-        }
+        stopThreads();
     }
 
     void stopThreads() {
@@ -171,17 +219,9 @@ struct FilesystemMonitoring : public UsageMonitoring {
     }
 
     void startThreads() {
+        stopThreads();
         for (auto const& [name, _] : mFsThresholds) {
-            std::unordered_map<std::string, std::thread>::iterator itr;
-
-            if ((itr = mFsThreads.find(name)) != mFsThreads.end() && itr->second.joinable()) {
-                itr->second.join();
-            }
-            if (itr != mFsThreads.end()) {
-                itr->second = std::thread(&FilesystemMonitoring::runFunc, this, name);
-            } else {
-                mFsThreads[name] = std::thread(&FilesystemMonitoring::runFunc, this, name);
-            }
+            mFsThreads[name] = std::thread(&FilesystemMonitoring::runFunc, this, name);
         }
     }
 
@@ -199,6 +239,8 @@ struct FilesystemMonitoring : public UsageMonitoring {
                 for (auto const& [thrName, thrValue] : std::get<1>(itr->second)) {
                     logMessage(SR_LL_DBG, std::string("Trigger notification for: ") + thrName +
                                               ": " + std::to_string(usageValue.value()));
+                    checkAndTriggerNotification(thrName, thrValue, usageValue.value(), "filesystem",
+                                                name);
                 }
             }
         }
@@ -209,10 +251,9 @@ struct FilesystemMonitoring : public UsageMonitoring {
                                      ":system-metrics/filesystems");
         S_Data_Node toplevel(session->get_data(data_xpath.c_str()));
         thresholdMap_t thresholdMap;
-        std::shared_ptr<std::pair<std::string, long double>> threshold;
-        std::shared_ptr<fsThresholdTuple_t> pollingTuple;
+        std::shared_ptr<std::pair<std::string, Threshold>> threshold;
         std::string mountPoint("");
-        uint32_t poll(0);
+        uint32_t poll(1);
         mFsThresholds.clear();
         for (S_Data_Node& root : toplevel->tree_for()) {
             for (S_Data_Node const& node : root->tree_dfs()) {
@@ -238,11 +279,11 @@ struct FilesystemMonitoring : public UsageMonitoring {
                         mountPoint = leaf.value_str();
                         threshold.reset();
                     } else if (sleaf.is_key() && std::string(sleaf.name()) == "name") {
-                        threshold = std::make_shared<std::pair<std::string, long double>>();
+                        threshold = std::make_shared<std::pair<std::string, Threshold>>();
                         threshold->first = leaf.value_str();
                     } else if (std::string(sleaf.name()) == "value") {
-                        threshold->second = leaf.value()->dec64().value /
-                                            std::pow(10, leaf.value()->dec64().digits);
+                        threshold->second.value = leaf.value()->dec64().value /
+                                                  std::pow(10, leaf.value()->dec64().digits);
                     }
 
                     if (std::string(sleaf.name()) == "poll-interval") {
@@ -265,7 +306,24 @@ struct FilesystemMonitoring : public UsageMonitoring {
         for (auto const& [name, thresholds] : mFsThresholds) {
             std::cout << "name: " << name << "\t poll:" << std::get<0>(thresholds);
             for (auto const& [thrName, thrValue] : std::get<1>(thresholds)) {
-                std::cout << "\t thrname: " << thrName << " thrvalue" << thrValue << std::endl;
+                std::cout << "\t thr-name: " << thrName << " thr-value" << thrValue.value << " "
+                          << thrValue.rising << " " << thrValue.falling << std::endl;
+            }
+        }
+    }
+
+    void setXpaths(sysrepo::S_Session session, libyang::S_Data_Node& parent) {
+        for (auto const& [fsName, thresholdTuple] : mFsThresholds) {
+            std::string configPath(
+                "/dt-metrics:system-metrics/filesystems/filesystem[mount-point='" + fsName +
+                "']/usage-monitoring/");
+            setXpath(session, parent, configPath + "poll-interval",
+                     std::to_string(std::get<0>(thresholdTuple)));
+            for (auto const& [name, thr] : std::get<1>(thresholdTuple)) {
+                std::stringstream stream;
+                stream << std::fixed << std::setprecision(2) << thr.value;
+                setXpath(session, parent, configPath + "threshold[name='" + name + "']/value",
+                         stream.str());
             }
         }
     }

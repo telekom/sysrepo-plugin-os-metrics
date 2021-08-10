@@ -108,19 +108,6 @@ struct MemoryStats {
         std::cout << "Hugepagesize:" << mHugePageSize << std::endl;
     }
 
-    uint64_t mFree;
-    uint64_t mSwapFree;
-    uint64_t mSwapTotal;
-    uint64_t mSwapUsed;
-    uint64_t mTotal;
-    uint64_t mUsable;
-    uint64_t mUsedBuffers;
-    uint64_t mUsedCached;
-    uint64_t mUsedShared;
-    uint64_t mHugePagesTotal;
-    uint64_t mHugePagesFree;
-    uint64_t mHugePageSize;
-
 private:
     MemoryStats()
         : mFree(0), mSwapFree(0), mSwapTotal(0), mSwapUsed(0), mTotal(0), mUsable(0),
@@ -140,6 +127,20 @@ private:
     }
 
     std::unordered_map<std::string, std::function<void(uint64_t)>> assignMap;
+
+public:
+    uint64_t mFree;
+    uint64_t mSwapFree;
+    uint64_t mSwapTotal;
+    uint64_t mSwapUsed;
+    uint64_t mTotal;
+    uint64_t mUsable;
+    uint64_t mUsedBuffers;
+    uint64_t mUsedCached;
+    uint64_t mUsedShared;
+    uint64_t mHugePagesTotal;
+    uint64_t mHugePagesFree;
+    uint64_t mHugePageSize;
 };
 
 }  // namespace metrics

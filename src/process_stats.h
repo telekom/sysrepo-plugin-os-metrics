@@ -18,14 +18,14 @@
 #ifndef PROCESS_STATS_H
 #define PROCESS_STATS_H
 
+#include <utils/globals.h>
+
 #include <cstring>
 #include <map>
 #include <optional>
 #include <proc/readproc.h>
 #include <sys/resource.h>
 #include <tuple>
-
-#include <utils/globals.h>
 
 namespace metrics {
 
@@ -171,7 +171,7 @@ struct ProcessStats {
         }
     }
 
-    void readAndSet(sysrepo::S_Session session, libyang::S_Data_Node& parent) {
+    void readAndSetAll(sysrepo::S_Session session, libyang::S_Data_Node& parent) {
         PROCTAB* proc = openproc(PROC_FILLMEM | PROC_FILLSTAT | PROC_FILLSTATUS);
 
         proc_t procInfo;

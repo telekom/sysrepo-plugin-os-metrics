@@ -58,6 +58,7 @@ struct Callback {
                                    const char* /* request_xpath */,
                                    uint32_t /* request_id */,
                                    libyang::S_Data_Node& parent) {
+        MemoryMonitoring::getInstance().setXpaths(session, parent);
         MemoryStats::getInstance().readMemoryStats();
         MemoryStats::getInstance().setXpathValues(session, parent);
         return SR_ERR_OK;
@@ -69,7 +70,7 @@ struct Callback {
                                        const char* request_xpath,
                                        uint32_t /* request_id */,
                                        libyang::S_Data_Node& parent) {
-        // parent->insert(sysrepo_get_session_->get_data(setXpath.c_str())->child());
+        FilesystemMonitoring::getInstance().setXpaths(session, parent);
         FilesystemStats::getInstance().readFilesystemStats();
         FilesystemStats::getInstance().setXpathValues(session, parent);
         return SR_ERR_OK;
@@ -82,7 +83,7 @@ struct Callback {
                                       uint32_t /* request_id */,
                                       libyang::S_Data_Node& parent) {
         ProcessStats stats;
-        stats.readAndSet(session, parent);
+        stats.readAndSetAll(session, parent);
         return SR_ERR_OK;
     }
 

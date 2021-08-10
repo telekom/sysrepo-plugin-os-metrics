@@ -29,15 +29,6 @@
 namespace metrics {
 
 struct Filesystem {
-    std::string name;
-    std::string mountPoint;
-    std::string type;
-    uint64_t totalBlocks = 0;
-    uint64_t usedBlocks = 0;
-    uint64_t availableBlocks = 0;
-    uint64_t blocksize = 1;  // KB
-    long double inodeUsed = 0;
-    long double spaceUsed = 0;
 
     void printValues() const {
         std::cout << "name: " << name << std::endl;
@@ -73,6 +64,16 @@ struct Filesystem {
             setXpath(session, parent, filesystemPath + "inode-used", stream.str());
         }
     }
+
+    std::string name;
+    std::string mountPoint;
+    std::string type;
+    uint64_t totalBlocks = 0;
+    uint64_t usedBlocks = 0;
+    uint64_t availableBlocks = 0;
+    uint64_t blocksize = 1;  // KB
+    long double inodeUsed = 0;
+    long double spaceUsed = 0;
 };
 
 struct FilesystemStats {

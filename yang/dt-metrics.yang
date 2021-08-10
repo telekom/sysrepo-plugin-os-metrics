@@ -428,6 +428,7 @@ module dt-metrics {
     leaf name {
       type leafref {
         path "/system-metrics/memory/usage-monitoring/threshold/name";
+        require-instance false;
       }
       description
         "Name of the usage-threshold.";
@@ -442,11 +443,13 @@ module dt-metrics {
     leaf mount-point {
       type leafref {
         path "/system-metrics/filesystems/filesystem/mount-point";
+        require-instance false;
       }
     }
     leaf name {
       type leafref {
         path "/system-metrics/filesystems/filesystem/usage-monitoring/threshold/name";
+        require-instance false;
       }
       description
         "Name of the usage-threshold.";
