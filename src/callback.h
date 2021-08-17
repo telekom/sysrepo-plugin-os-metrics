@@ -96,9 +96,9 @@ struct Callback {
         printCurrentConfig(session, module_name, "system-metrics/memory//*");
         if (session->get_context()->get_module(module_name)->feature_state("usage-notifications") ==
             1) {
+            MemoryMonitoring::getInstance().notify();
             {
                 std::lock_guard<std::mutex> lk(MemoryMonitoring::getInstance().mNotificationMtx);
-                MemoryMonitoring::getInstance().notify();
                 MemoryMonitoring::getInstance().populateConfigData(session, module_name);
             }
             MemoryMonitoring::getInstance().startThread();
@@ -116,10 +116,10 @@ struct Callback {
         printCurrentConfig(session, module_name, "system-metrics/filesystems//*");
         if (session->get_context()->get_module(module_name)->feature_state("usage-notifications") ==
             1) {
+            FilesystemMonitoring::getInstance().notify();
             {
                 std::lock_guard<std::mutex> lk(
                     FilesystemMonitoring::getInstance().mNotificationMtx);
-                FilesystemMonitoring::getInstance().notify();
                 FilesystemMonitoring::getInstance().populateConfigData(session, module_name);
             }
             FilesystemMonitoring::getInstance().startThreads();

@@ -117,6 +117,7 @@ struct MemoryMonitoring : public UsageMonitoring {
         if (mThread.joinable()) {
             mThread.join();
         }
+        logMessage(SR_LL_DBG, "Thread for memory started.");
         mThread = std::thread(&MemoryMonitoring::runFunc, this);
     }
 
@@ -130,6 +131,7 @@ struct MemoryMonitoring : public UsageMonitoring {
                 checkAndTriggerNotification(name, thrValue, value, "memory");
             }
         }
+        logMessage(SR_LL_DBG, "Thread for memory ended.");
     }
 
     void populateConfigData(sysrepo::S_Session& session, char const* module_name) {
@@ -210,17 +212,22 @@ struct FilesystemMonitoring : public UsageMonitoring {
     }
 
     void stopThreads() {
+        int32_t numThreadsStopped(0);
         for (auto& [_, thread] : mFsThreads) {
             if (thread.joinable()) {
                 thread.join();
+                numThreadsStopped++;
             }
         }
+        logMessage(SR_LL_DBG, std::to_string(numThreadsStopped) + " threads stopped, out of: " +
+                                  std::to_string(mFsThreads.size()) + " started.");
         mFsThreads.clear();
     }
 
     void startThreads() {
         stopThreads();
         for (auto const& [name, _] : mFsThresholds) {
+            logMessage(SR_LL_DBG, "Starting thread for filesystem: " + name + ".");
             mFsThreads[name] = std::thread(&FilesystemMonitoring::runFunc, this, name);
         }
     }
@@ -244,6 +251,7 @@ struct FilesystemMonitoring : public UsageMonitoring {
                 }
             }
         }
+        logMessage(SR_LL_DBG, "Thread for filesystem: " + name + " ended.");
     }
 
     void populateConfigData(sysrepo::S_Session& session, char const* module_name) {
