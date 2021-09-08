@@ -11,6 +11,8 @@ endif
 
 thread_dep = dependency('threads')
 
+find_program('df', required : true)
+
 inc = include_directories('utils')
 shared_library('dt-metrics-plugin', 'dt_metrics_plugin.cc',
                 include_directories : inc,

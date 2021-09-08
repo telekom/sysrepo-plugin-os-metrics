@@ -55,10 +55,14 @@ sysrepocfg -Iyang/share/dt-metrics-text-config.xml -d running
 
 ### Dependencies
 ```
-libyang compiled with libyang-cpp
-sysrepo compiled with sysrepo-cpp
+libyang
+libyang-cpp
+sysrepo
+sysrepo-cpp
 libprocps
 pthreads
+df
 ```
 
-The plugin assumes it's being installed on a Debian system and uses tools like df, and the `/proc` structure internally.
+The libyang and sysrepo dependencies should be compiled from their public repositories `libyang1` branches.
+The plugin assumes it's being installed on a Debian system and uses tools like `df`, and the `/proc` structure internally.
