@@ -55,18 +55,21 @@ struct UsageMonitoring {
         mCV.notify_all();
     }
 
+    void initConn() {
+        std::call_once(mConnCreated, [&]() { mConn = std::make_shared<sysrepo::Connection>(); });
+    }
+
     void checkAndTriggerNotification(std::string const& sensName,
                                      Threshold const& thr,
                                      long double value,
                                      std::string const& type,
                                      std::string mountPoint = std::string()) {
-        // TODO: sysrepo synchronized connections with global mtx
         std::string notifPath("/dt-metrics:" + type + "-threshold-crossed");
-        /* connect to sysrepo */
-        auto conn = std::make_shared<sysrepo::Connection>();
 
-        /* start session */
-        auto sess = std::make_shared<sysrepo::Session>(conn);
+        if (!mConn) {
+            return;
+        }
+        sysrepo::S_Session sess = std::make_shared<sysrepo::Session>(mConn);
 
         sysrepo::S_Vals in_vals;
         if (type == "memory") {
@@ -89,6 +92,8 @@ struct UsageMonitoring {
         sess->event_notif_send(notifPath.c_str(), in_vals);
     }
 
+    std::once_flag mConnCreated;
+    sysrepo::S_Connection mConn;
     std::mutex mNotificationMtx;
     std::condition_variable mCV;
 };
@@ -118,6 +123,7 @@ struct MemoryMonitoring : public UsageMonitoring {
         if (mMemoryThesholds.empty()) {
             return;
         }
+        initConn();
         if (mThread.joinable()) {
             mThread.join();
         }
@@ -230,6 +236,10 @@ struct FilesystemMonitoring : public UsageMonitoring {
     }
 
     void startThreads() {
+        if (mFsThresholds.empty()) {
+            return;
+        }
+        initConn();
         for (auto const& [name, _] : mFsThresholds) {
             logMessage(SR_LL_DBG, "Starting thread for filesystem: " + name + ".");
             mFsThreads[name] = std::thread(&FilesystemMonitoring::runFunc, this, name);
