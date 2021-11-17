@@ -15,6 +15,8 @@ Build by making a build directory (i.e. build/), run meson in that dir, and then
 
 ```bash
 mkdir -p /opt/sysrepo/lib/sysrepo/plugins
+git clone git@gitlab.dev.terastrm.net:mirrors/qualitance-os-monitoring.git
+cd qualitance-os-monitoring
 meson --prefix="/opt/sysrepo/lib/sysrepo/plugins" ./build
 ninja -C ./build
 ```
