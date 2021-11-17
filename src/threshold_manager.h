@@ -22,7 +22,6 @@
 #include <memory_stats.h>
 #include <utils/globals.h>
 
-#include <atomic>
 #include <chrono>
 #include <condition_variable>
 #include <map>
@@ -64,6 +63,7 @@ struct UsageMonitoring {
                                      long double value,
                                      std::string const& type,
                                      std::string mountPoint = std::string()) {
+        std::lock_guard lk(mSysrepoMtx);
         std::string notifPath("/dt-metrics:" + type + "-threshold-crossed");
 
         if (!mConn) {
@@ -92,11 +92,14 @@ struct UsageMonitoring {
         sess->event_notif_send(notifPath.c_str(), in_vals);
     }
 
+    static std::mutex mSysrepoMtx;
     std::once_flag mConnCreated;
     sysrepo::S_Connection mConn;
     std::mutex mNotificationMtx;
     std::condition_variable mCV;
 };
+
+std::mutex UsageMonitoring::mSysrepoMtx;
 
 struct MemoryMonitoring : public UsageMonitoring {
 
