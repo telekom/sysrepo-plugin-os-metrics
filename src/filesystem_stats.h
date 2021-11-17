@@ -22,6 +22,7 @@
 
 #include <fstream>
 #include <iomanip>
+#include <mutex>
 #include <numeric>
 #include <sstream>
 #include <sys/statvfs.h>
@@ -87,6 +88,7 @@ struct FilesystemStats {
     void operator=(FilesystemStats const&) = delete;
 
     void readFilesystemStats() {
+        std::lock_guard lk(mMtx);
         int rc = system("/bin/df -T > " FILESYSTEM_STATS_LOCATION
                         "&& /bin/df -i > " FILESYSTEM_STATS_LOCATION2);
         if (rc == -1) {
@@ -137,6 +139,7 @@ struct FilesystemStats {
 
     std::optional<long double> getUsage(std::string mountPoint) {
         readFilesystemStats();
+        std::lock_guard lk(mMtx);
         std::unordered_map<std::string, Filesystem>::iterator itr;
         if ((itr = fsMap.find(mountPoint)) != fsMap.end()) {
             return itr->second.spaceUsed;
@@ -145,7 +148,7 @@ struct FilesystemStats {
         }
     }
 
-    void printValues() {
+    void printValues() const {
         for (auto const& v : fsMap) {
             v.second.printValues();
             std::cout << std::endl;
@@ -153,6 +156,7 @@ struct FilesystemStats {
     }
 
     void setXpathValues(sysrepo::S_Session session, libyang::S_Data_Node& parent) {
+        std::lock_guard lk(mMtx);
         logMessage(SR_LL_DBG, "Setting xpath values for filesystems statistics");
         for (auto const& v : fsMap) {
             v.second.setXpathValues(session, parent);
@@ -161,6 +165,7 @@ struct FilesystemStats {
 
 private:
     FilesystemStats() = default;
+    std::mutex mMtx;
     std::unordered_map<std::string, Filesystem> fsMap;
 };
 

@@ -30,7 +30,7 @@
 namespace metrics {
 
 struct ProcessStats {
-    using setFunction_t = std::function<void(
+    using setFunction_t = const std::function<void(
         uint64_t, sysrepo::S_Session, libyang::S_Data_Node&, std::string const&, int32_t)>;
 
     static ProcessStats& getInstance() {
@@ -41,7 +41,7 @@ struct ProcessStats {
     ProcessStats(ProcessStats const&) = delete;
     void operator=(ProcessStats const&) = delete;
 
-    static std::unordered_map<std::string, setFunction_t> getAssignMap() {
+    static setFunction_t getSetFunction(std::string const& token) {
         static std::unordered_map<std::string, setFunction_t> _{
             {"syscr:",
              [](uint64_t value, sysrepo::S_Session session, libyang::S_Data_Node& parent,
@@ -74,9 +74,8 @@ struct ProcessStats {
                  setXpath(session, parent, path + "/involuntary-ctx-switches",
                           std::to_string(value));
              }},
-            {"FDSize:",
-             [](uint64_t value, sysrepo::S_Session session, libyang::S_Data_Node& parent,
-                std::string const& path, int32_t tid) {
+            {"FDSize:", [](uint64_t value, sysrepo::S_Session session, libyang::S_Data_Node& parent,
+                           std::string const& path, int32_t tid) {
                  setXpath(session, parent, path + "/open-file-descriptors", std::to_string(value));
                  struct rlimit maxFDs;
                  if (!prlimit(tid, RLIMIT_NOFILE, nullptr, &maxFDs)) {
@@ -85,9 +84,11 @@ struct ProcessStats {
                             << value * 100.0 / static_cast<long double>(maxFDs.rlim_cur);
                      setXpath(session, parent, path + "/open-file-descriptors-perc", stream.str());
                  }
-             }},
-        };
-        return _;
+             }}};
+        if (_.find(token) != _.end()) {
+            return _.at(token);
+        }
+        return nullptr;
     }
 
     static std::optional<size_t> getCpuTimes() {
@@ -166,12 +167,12 @@ struct ProcessStats {
                     std::string const& what) {
         std::string token;
         std::ifstream file("/proc/" + std::to_string(tid) + "/" + what);
-        std::unordered_map<std::string, setFunction_t>::iterator itr;
         while (file >> token) {
-            if ((itr = getAssignMap().find(token)) != getAssignMap().end()) {
+            auto const& func = getSetFunction(token);
+            if (func) {
                 uint64_t value;
                 if (file >> value) {
-                    itr->second(value, session, parent, procXpath, tid);
+                    func(value, session, parent, procXpath, tid);
                 }
             }
             // ignore rest of the line

@@ -24,6 +24,7 @@
 #include <functional>
 #include <iomanip>
 #include <map>
+#include <mutex>
 #include <numeric>
 #include <sstream>
 
@@ -40,6 +41,7 @@ struct MemoryStats {
     void operator=(MemoryStats const&) = delete;
 
     void setXpathValues(sysrepo::S_Session session, libyang::S_Data_Node& parent) {
+        std::lock_guard lk(mMtx);
         logMessage(SR_LL_DBG, "Setting xpath values for memory statistics");
         std::string memoryPath("/dt-metrics:system-metrics/memory/statistics/");
         setXpath(session, parent, memoryPath + "free", std::to_string(mFree / 1024ULL));
@@ -73,6 +75,7 @@ struct MemoryStats {
     }
 
     void readMemoryStats() {
+        std::lock_guard lk(mMtx);
         std::string token;
         std::ifstream file("/proc/meminfo");
         while (file >> token) {
@@ -91,10 +94,11 @@ struct MemoryStats {
 
     long double getUsage() {
         readMemoryStats();
+        std::lock_guard lk(mMtx);
         return 100.0 - (mUsable / static_cast<long double>(mTotal) * 100.0);
     }
 
-    void printValues() {
+    void printValues() const {
         std::cout << "MemTotal:" << mTotal << std::endl;
         std::cout << "MemFree:" << mFree << std::endl;
         std::cout << "MemAvailable:" << mUsable << std::endl;
@@ -128,6 +132,7 @@ private:
     }
 
     std::unordered_map<std::string, std::function<void(uint64_t)>> assignMap;
+    std::mutex mMtx;
 
 public:
     uint64_t mFree;

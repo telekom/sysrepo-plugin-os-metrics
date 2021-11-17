@@ -60,6 +60,7 @@ struct UsageMonitoring {
                                      long double value,
                                      std::string const& type,
                                      std::string mountPoint = std::string()) {
+        // TODO: sysrepo synchronized connections with global mtx
         std::string notifPath("/dt-metrics:" + type + "-threshold-crossed");
         /* connect to sysrepo */
         auto conn = std::make_shared<sysrepo::Connection>();
@@ -107,17 +108,20 @@ struct MemoryMonitoring : public UsageMonitoring {
     }
 
     void notifyAndJoin() {
+        mCV.notify_all();
         if (mThread.joinable()) {
-            mCV.notify_all();
             mThread.join();
         }
     }
 
     void startThread() {
+        if (mMemoryThesholds.empty()) {
+            return;
+        }
         if (mThread.joinable()) {
             mThread.join();
         }
-        logMessage(SR_LL_DBG, "Thread for memory started.");
+        logMessage(SR_LL_DBG, "Thread for memory thresholds started.");
         mThread = std::thread(&MemoryMonitoring::runFunc, this);
     }
 
@@ -131,7 +135,7 @@ struct MemoryMonitoring : public UsageMonitoring {
                 checkAndTriggerNotification(name, thrValue, value, "memory");
             }
         }
-        logMessage(SR_LL_DBG, "Thread for memory ended.");
+        logMessage(SR_LL_DBG, "Thread for memory thresholds ended.");
     }
 
     void populateConfigData(sysrepo::S_Session& session, char const* module_name) {
@@ -175,7 +179,7 @@ struct MemoryMonitoring : public UsageMonitoring {
         }
     }
 
-    void setXpaths(sysrepo::S_Session session, libyang::S_Data_Node& parent) {
+    void setXpaths(sysrepo::S_Session session, libyang::S_Data_Node& parent) const {
         std::string configPath("/dt-metrics:system-metrics/memory/usage-monitoring/");
         setXpath(session, parent, configPath + "poll-interval", std::to_string(pollInterval));
         for (auto const& [name, thr] : mMemoryThesholds) {
@@ -219,13 +223,13 @@ struct FilesystemMonitoring : public UsageMonitoring {
                 numThreadsStopped++;
             }
         }
-        logMessage(SR_LL_DBG, std::to_string(numThreadsStopped) + " threads stopped, out of: " +
+        logMessage(SR_LL_DBG, std::to_string(numThreadsStopped) +
+                                  " filesystem threads stopped, out of: " +
                                   std::to_string(mFsThreads.size()) + " started.");
         mFsThreads.clear();
     }
 
     void startThreads() {
-        stopThreads();
         for (auto const& [name, _] : mFsThresholds) {
             logMessage(SR_LL_DBG, "Starting thread for filesystem: " + name + ".");
             mFsThreads[name] = std::thread(&FilesystemMonitoring::runFunc, this, name);
@@ -320,9 +324,9 @@ struct FilesystemMonitoring : public UsageMonitoring {
         }
     }
 
-    void setXpaths(sysrepo::S_Session session, libyang::S_Data_Node& parent) {
+    void setXpaths(sysrepo::S_Session session, libyang::S_Data_Node& parent) const {
         for (auto const& [fsName, thresholdTuple] : mFsThresholds) {
-            std::string configPath(
+            std::string const configPath(
                 "/dt-metrics:system-metrics/filesystems/filesystem[mount-point='" + fsName +
                 "']/usage-monitoring/");
             setXpath(session, parent, configPath + "poll-interval",
