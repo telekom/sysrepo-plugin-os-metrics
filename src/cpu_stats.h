@@ -22,6 +22,7 @@
 
 #include <fstream>
 #include <iomanip>
+#include <iostream>
 #include <numeric>
 #include <optional>
 #include <sstream>
@@ -44,8 +45,8 @@ struct CoreStats {
                   << " " << mIrq << " " << mSoftirq << " " << mStolen << " " << mTotal << std::endl;
     }
 
-    void setXpathValues(sysrepo::S_Session session,
-                        libyang::S_Data_Node& parent,
+    void setXpathValues(sysrepo::Session session,
+                        std::optional<libyang::DataNode>& parent,
                         std::optional<size_t> index) {
         std::string basePath("/dt-metrics:system-metrics/cpu-statistics");
         std::string cpuPath;
@@ -124,7 +125,7 @@ struct CpuStats : public CoreStats {
         }
     }
 
-    void setXpathValues(sysrepo::S_Session session, libyang::S_Data_Node& parent) {
+    void setXpathValues(sysrepo::Session session, std::optional<libyang::DataNode>& parent) {
         logMessage(SR_LL_DBG, "Setting xpath values for cpu statistics");
         CoreStats::setXpathValues(session, parent, std::nullopt);
         for (size_t i = 0; i < mCoreTimes.size(); i++) {

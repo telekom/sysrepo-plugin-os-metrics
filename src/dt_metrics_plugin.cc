@@ -18,20 +18,15 @@
 #include <callback.h>
 
 #include <stdio.h>
+#include <sysrepo-cpp/Connection.hpp>
 
 extern "C" {
 void sr_plugin_cleanup_cb(sr_session_ctx_t* session, void* private_data);
 int sr_plugin_init_cb(sr_session_ctx_t* session, void** private_data);
 }
 
-using sysrepo::S_Session;
-using sysrepo::S_Subscribe;
-using sysrepo::Session;
-using sysrepo::Subscribe;
-
 struct MetricsModel {
-    S_Subscribe subscription;
-    S_Session sess;
+    std::shared_ptr<sysrepo::Subscription> sub;
     static std::string const moduleName;
 };
 
@@ -40,39 +35,42 @@ std::string const MetricsModel::moduleName = "dt-metrics";
 static MetricsModel theModel;
 
 int sr_plugin_init_cb(sr_session_ctx_t* session, void** /*private_data*/) {
-    theModel.sess = std::make_shared<Session>(session);
-    theModel.subscription = std::make_shared<Subscribe>(theModel.sess);
-    std::string cpu_state_xpath("/" + MetricsModel::moduleName + ":" +
-                                "system-metrics/cpu-statistics");
-    std::string memory_state_xpath("/" + MetricsModel::moduleName + ":" +
-                                   "system-metrics/memory/statistics");
-    std::string memory_config_xpath("/" + MetricsModel::moduleName + ":" + "system-metrics/memory");
-    std::string filesystem_state_xpath("/" + MetricsModel::moduleName + ":" +
-                                       "system-metrics/filesystems");
-    std::string processes_state_spath("/" + MetricsModel::moduleName + ":" +
-                                      "system-metrics/processes");
+    sysrepo::Connection conn;
+    sysrepo::Session ses = conn.sessionStart();
+    std::string const cpu_state_xpath("/" + MetricsModel::moduleName + ":" +
+                                      "system-metrics/cpu-statistics");
+    std::string const memory_state_xpath("/" + MetricsModel::moduleName + ":" +
+                                         "system-metrics/memory/statistics");
+    std::string const memory_config_xpath("/" + MetricsModel::moduleName + ":" +
+                                          "system-metrics/memory");
+    std::string const filesystem_state_xpath("/" + MetricsModel::moduleName + ":" +
+                                             "system-metrics/filesystems");
+    std::string const processes_state_spath("/" + MetricsModel::moduleName + ":" +
+                                            "system-metrics/processes");
     try {
-        theModel.subscription->module_change_subscribe(
+        metrics::MemoryMonitoring::getInstance().injectConnection(conn);
+        metrics::FilesystemMonitoring::getInstance().injectConnection(conn);
+
+        sysrepo::Subscription sub = ses.onModuleChange(
             MetricsModel::moduleName.c_str(), &metrics::Callback::memoryConfigCallback,
-            memory_config_xpath.c_str(), 0, SR_SUBSCR_ENABLED | SR_SUBSCR_DONE_ONLY);
-        theModel.subscription->module_change_subscribe(
+            memory_config_xpath.c_str(), 0,
+            sysrepo::SubscribeOptions::Enabled | sysrepo::SubscribeOptions::DoneOnly);
+        sub.onModuleChange(
             MetricsModel::moduleName.c_str(), &metrics::Callback::filesystemsConfigCallback,
-            filesystem_state_xpath.c_str(), 0, SR_SUBSCR_ENABLED | SR_SUBSCR_DONE_ONLY);
-        theModel.subscription->oper_get_items_subscribe(MetricsModel::moduleName.c_str(),
-                                                        &metrics::Callback::cpuStateCallback,
-                                                        cpu_state_xpath.c_str());
-        theModel.subscription->oper_get_items_subscribe(MetricsModel::moduleName.c_str(),
-                                                        &metrics::Callback::memoryStateCallback,
-                                                        memory_state_xpath.c_str());
-        theModel.subscription->oper_get_items_subscribe(MetricsModel::moduleName.c_str(),
-                                                        &metrics::Callback::filesystemStateCallback,
-                                                        filesystem_state_xpath.c_str());
-        theModel.subscription->oper_get_items_subscribe(MetricsModel::moduleName.c_str(),
-                                                        &metrics::Callback::processesStateCallback,
-                                                        processes_state_spath.c_str());
+            filesystem_state_xpath.c_str(), 0,
+            sysrepo::SubscribeOptions::Enabled | sysrepo::SubscribeOptions::DoneOnly);
+        sub.onOperGet(MetricsModel::moduleName.c_str(), &metrics::Callback::cpuStateCallback,
+                      cpu_state_xpath.c_str());
+        sub.onOperGet(MetricsModel::moduleName.c_str(), &metrics::Callback::memoryStateCallback,
+                      memory_state_xpath.c_str());
+        sub.onOperGet(MetricsModel::moduleName.c_str(), &metrics::Callback::filesystemStateCallback,
+                      filesystem_state_xpath.c_str());
+        sub.onOperGet(MetricsModel::moduleName.c_str(), &metrics::Callback::processesStateCallback,
+                      processes_state_spath.c_str());
+        theModel.sub = std::make_shared<sysrepo::Subscription>(std::move(sub));
     } catch (std::exception const& e) {
         logMessage(SR_LL_ERR, std::string("sr_plugin_init_cb: ") + e.what());
-        theModel.subscription.reset();
+        theModel.sub.reset();
         return SR_ERR_OPERATION_FAILED;
     }
 
@@ -80,7 +78,6 @@ int sr_plugin_init_cb(sr_session_ctx_t* session, void** /*private_data*/) {
 }
 
 void sr_plugin_cleanup_cb(sr_session_ctx_t* /*session*/, void* /*private_data*/) {
-    theModel.subscription.reset();
-    theModel.sess.reset();
+    theModel.sub.reset();
     logMessage(SR_LL_DBG, "plugin cleanup finished.");
 }

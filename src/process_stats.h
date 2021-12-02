@@ -30,8 +30,11 @@
 namespace metrics {
 
 struct ProcessStats {
-    using setFunction_t = const std::function<void(
-        uint64_t, sysrepo::S_Session, libyang::S_Data_Node&, std::string const&, int32_t)>;
+    using setFunction_t = const std::function<void(uint64_t,
+                                                   sysrepo::Session,
+                                                   std::optional<libyang::DataNode>&,
+                                                   std::string const&,
+                                                   int32_t)>;
 
     static ProcessStats& getInstance() {
         static ProcessStats instance;
@@ -44,38 +47,39 @@ struct ProcessStats {
     static setFunction_t getSetFunction(std::string const& token) {
         static std::unordered_map<std::string, setFunction_t> _{
             {"syscr:",
-             [](uint64_t value, sysrepo::S_Session session, libyang::S_Data_Node& parent,
+             [](uint64_t value, sysrepo::Session session, std::optional<libyang::DataNode>& parent,
                 std::string const& path, int32_t tid) {
                  setXpath(session, parent, path + "/io/read-count", std::to_string(value));
              }},
             {"syscw:",
-             [](uint64_t value, sysrepo::S_Session session, libyang::S_Data_Node& parent,
+             [](uint64_t value, sysrepo::Session session, std::optional<libyang::DataNode>& parent,
                 std::string const& path, int32_t tid) {
                  setXpath(session, parent, path + "/io/write-count", std::to_string(value));
              }},
             {"read_bytes:",
-             [](uint64_t value, sysrepo::S_Session session, libyang::S_Data_Node& parent,
+             [](uint64_t value, sysrepo::Session session, std::optional<libyang::DataNode>& parent,
                 std::string const& path, int32_t tid) {
                  setXpath(session, parent, path + "/io/read-kbytes", std::to_string(value / 1024));
              }},
             {"write_bytes:",
-             [](uint64_t value, sysrepo::S_Session session, libyang::S_Data_Node& parent,
+             [](uint64_t value, sysrepo::Session session, std::optional<libyang::DataNode>& parent,
                 std::string const& path, int32_t tid) {
                  setXpath(session, parent, path + "/io/write-kbytes", std::to_string(value / 1024));
              }},
             {"voluntary_ctxt_switches:",
-             [](uint64_t value, sysrepo::S_Session session, libyang::S_Data_Node& parent,
+             [](uint64_t value, sysrepo::Session session, std::optional<libyang::DataNode>& parent,
                 std::string const& path, int32_t tid) {
                  setXpath(session, parent, path + "/voluntary-ctx-switches", std::to_string(value));
              }},
             {"nonvoluntary_ctxt_switches:",
-             [](uint64_t value, sysrepo::S_Session session, libyang::S_Data_Node& parent,
+             [](uint64_t value, sysrepo::Session session, std::optional<libyang::DataNode>& parent,
                 std::string const& path, int32_t tid) {
                  setXpath(session, parent, path + "/involuntary-ctx-switches",
                           std::to_string(value));
              }},
-            {"FDSize:", [](uint64_t value, sysrepo::S_Session session, libyang::S_Data_Node& parent,
-                           std::string const& path, int32_t tid) {
+            {"FDSize:",
+             [](uint64_t value, sysrepo::Session session, std::optional<libyang::DataNode>& parent,
+                std::string const& path, int32_t tid) {
                  setXpath(session, parent, path + "/open-file-descriptors", std::to_string(value));
                  struct rlimit maxFDs;
                  if (!prlimit(tid, RLIMIT_NOFILE, nullptr, &maxFDs)) {
@@ -160,8 +164,8 @@ struct ProcessStats {
         }
     }
 
-    void readAndSet(sysrepo::S_Session session,
-                    libyang::S_Data_Node& parent,
+    void readAndSet(sysrepo::Session session,
+                    std::optional<libyang::DataNode>& parent,
                     int32_t tid,
                     std::string const& procXpath,
                     std::string const& what) {
@@ -180,7 +184,7 @@ struct ProcessStats {
         }
     }
 
-    void readAndSetAll(sysrepo::S_Session session, libyang::S_Data_Node& parent) {
+    void readAndSetAll(sysrepo::Session session, std::optional<libyang::DataNode>& parent) {
         PROCTAB* proc = openproc(PROC_FILLMEM | PROC_FILLSTAT | PROC_FILLSTATUS);
 
         proc_t procInfo;

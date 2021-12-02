@@ -43,7 +43,7 @@ struct Filesystem {
         std::cout << "spaceUsed: " << spaceUsed << std::endl;
     }
 
-    void setXpathValues(sysrepo::S_Session session, libyang::S_Data_Node& parent) const {
+    void setXpathValues(sysrepo::Session session, std::optional<libyang::DataNode>& parent) const {
         std::string filesystemPath(
             "/dt-metrics:system-metrics/filesystems/filesystem[mount-point='" + mountPoint +
             "']/statistics/");
@@ -155,7 +155,7 @@ struct FilesystemStats {
         }
     }
 
-    void setXpathValues(sysrepo::S_Session session, libyang::S_Data_Node& parent) {
+    void setXpathValues(sysrepo::Session session, std::optional<libyang::DataNode>& parent) {
         std::lock_guard lk(mMtx);
         logMessage(SR_LL_DBG, "Setting xpath values for filesystems statistics");
         for (auto const& v : fsMap) {

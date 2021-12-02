@@ -40,7 +40,7 @@ struct MemoryStats {
     MemoryStats(MemoryStats const&) = delete;
     void operator=(MemoryStats const&) = delete;
 
-    void setXpathValues(sysrepo::S_Session session, libyang::S_Data_Node& parent) {
+    void setXpathValues(sysrepo::Session session, std::optional<libyang::DataNode>& parent) {
         std::lock_guard lk(mMtx);
         logMessage(SR_LL_DBG, "Setting xpath values for memory statistics");
         std::string memoryPath("/dt-metrics:system-metrics/memory/statistics/");
