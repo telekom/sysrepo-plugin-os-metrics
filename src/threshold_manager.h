@@ -245,6 +245,7 @@ struct FilesystemMonitoring : public UsageMonitoring {
                 std::optional<long double> usageValue =
                     FilesystemStats::getInstance().getUsage(name);
                 if (!usageValue) {
+                    logMessage(SR_LL_WRN, std::string("No filesystem found: ") + name);
                     break;
                 }
                 for (auto const& [thrName, thrValue] : std::get<1>(itr->second)) {
