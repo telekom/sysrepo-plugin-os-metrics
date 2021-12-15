@@ -27,6 +27,7 @@
 #include <map>
 #include <math.h>
 #include <mutex>
+#include <sysrepo-cpp/Connection.hpp>
 #include <thread>
 
 namespace metrics {

@@ -30,6 +30,7 @@
     <filesystem>
         <mount-point>/snap/core20/1081</mount-point>
         <usage-monitoring>
+            <poll-interval>10</poll-interval>
             <threshold>
                 <name>highfs3</name>
                 <value>45</value>

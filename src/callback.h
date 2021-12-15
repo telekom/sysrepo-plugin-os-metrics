@@ -30,14 +30,15 @@ struct Callback {
     using Session = sysrepo::Session;
     using ErrorCode = sysrepo::ErrorCode;
     using Event = sysrepo::Event;
+    using DataNode = libyang::DataNode;
 
     static ErrorCode cpuStateCallback(Session session,
                                       uint32_t /* subscriptionId */,
-                                      std::string_view moduleName,
+                                      std::string_view /* moduleName */,
                                       std::optional<std::string_view> /* subXPath */,
                                       std::optional<std::string_view> /* requestXPath */,
                                       uint32_t /* requestId */,
-                                      std::optional<libyang::DataNode>& parent) {
+                                      std::optional<DataNode>& parent) {
         CpuStats stats;
         stats.readCpuTimes();
         stats.setXpathValues(session, parent);
@@ -64,7 +65,7 @@ struct Callback {
                                          std::optional<std::string_view> /* subXPath */,
                                          std::optional<std::string_view> /* requestXPath */,
                                          uint32_t /* requestId */,
-                                         std::optional<libyang::DataNode>& parent) {
+                                         std::optional<DataNode>& parent) {
         auto module = findModule(session, moduleName);
         if (module && module.value().featureEnabled("usage-notifications")) {
             MemoryMonitoring::getInstance().setXpaths(session, parent);
@@ -80,7 +81,7 @@ struct Callback {
                                              std::optional<std::string_view> /* subXPath */,
                                              std::optional<std::string_view> /* requestXPath */,
                                              uint32_t /* requestId */,
-                                             std::optional<libyang::DataNode>& parent) {
+                                             std::optional<DataNode>& parent) {
         auto module = findModule(session, moduleName);
         if (module && module.value().featureEnabled("usage-notifications")) {
             FilesystemMonitoring::getInstance().setXpaths(session, parent);
@@ -92,11 +93,11 @@ struct Callback {
 
     static ErrorCode processesStateCallback(Session session,
                                             uint32_t /* subscriptionId */,
-                                            std::string_view moduleName,
+                                            std::string_view /* moduleName */,
                                             std::optional<std::string_view> /* subXPath */,
                                             std::optional<std::string_view> /* requestXPath */,
                                             uint32_t /* requestId */,
-                                            std::optional<libyang::DataNode>& parent) {
+                                            std::optional<DataNode>& parent) {
         ProcessStats::getInstance().readAndSetAll(session, parent);
         return ErrorCode::Ok;
     }
@@ -135,37 +136,6 @@ struct Callback {
             logMessage(SR_LL_WRN, "Feature not enabled: usage-notifications");
         }
         return ErrorCode::Ok;
-    }
-
-    static void
-    printCurrentConfig(Session& session, std::string_view module_name, std::string const& node) {
-        try {
-            std::string xpath(std::string("/") + std::string(module_name) + std::string(":") +
-                              node);
-            auto values = session.getData(xpath.c_str());
-            if (!values)
-                return;
-
-            std::string const toPrint(
-                values.value()
-                    .printStr(libyang::DataFormat::JSON, libyang::PrintFlags::WithSiblings)
-                    .value());
-            logMessage(SR_LL_DBG, toPrint.c_str());
-        } catch (const std::exception& e) {
-            logMessage(SR_LL_WRN, e.what());
-        }
-    }
-
-    static std::optional<libyang::Module> findModule(sysrepo::Session session,
-                                                     std::string_view moduleName) {
-        auto const& modules = session.getContext().modules();
-        auto module = std::find_if(
-            modules.begin(), modules.end(),
-            [moduleName](libyang::Module const& module) { return moduleName == module.name(); });
-        if (module == std::end(modules)) {
-            return std::nullopt;
-        }
-        return *module;
     }
 };
 

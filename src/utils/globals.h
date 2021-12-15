@@ -60,4 +60,36 @@ static bool setXpath(sysrepo::Session& session,
     return true;
 }
 
+[[maybe_unused]] static std::optional<libyang::Module> findModule(sysrepo::Session session,
+                                                                  std::string_view moduleName) {
+    auto const& modules = session.getContext().modules();
+    auto module =
+        std::find_if(modules.begin(), modules.end(), [moduleName](libyang::Module const& module) {
+            return moduleName == module.name();
+        });
+    if (module == std::end(modules)) {
+        return std::nullopt;
+    }
+    return *module;
+}
+
+static void printCurrentConfig(sysrepo::Session& session,
+                               std::string_view module_name,
+                               std::string const& node) {
+    try {
+        std::string xpath(std::string("/") + std::string(module_name) + std::string(":") + node);
+        auto values = session.getData(xpath.c_str());
+        if (!values)
+            return;
+
+        std::string const toPrint(
+            values.value()
+                .printStr(libyang::DataFormat::JSON, libyang::PrintFlags::WithSiblings)
+                .value());
+        logMessage(SR_LL_DBG, toPrint.c_str());
+    } catch (const std::exception& e) {
+        logMessage(SR_LL_WRN, e.what());
+    }
+}
+
 #endif  // GLOBALS_H
