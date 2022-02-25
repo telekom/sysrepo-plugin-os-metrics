@@ -14,7 +14,7 @@ thread_dep = dependency('threads')
 find_program('df', required : true)
 
 inc = include_directories('utils')
-shared_library('dt-metrics-plugin', 'dt_metrics_plugin.cc',
+shared_library('os-metrics-plugin', 'os_metrics_plugin.cc',
                 include_directories : inc,
                 dependencies : [libyang, libyang_cpp, libsysrepo, libsysrepo_cpp, libprocps, thread_dep],
                 install : true,

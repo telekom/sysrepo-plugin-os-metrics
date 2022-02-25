@@ -1,19 +1,12 @@
-// (C) 2020 Deutsche Telekom AG.
+// telekom / sysrepo-plugin-os-metrics
 //
-// Deutsche Telekom AG and all other contributors /
-// copyright owners license this file to you under the Apache
-// License, Version 2.0 (the "License"); you may not use this
-// file except in compliance with the License.
-// You may obtain a copy of the License at
+// This program is made available under the terms of the
+// BSD 3-Clause license which is available at
+// https://opensource.org/licenses/BSD-3-Clause
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+// SPDX-FileCopyrightText: 2022 Deutsche Telekom AG
 //
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied. See the License for the
-// specific language governing permissions and limitations
-// under the License.
+// SPDX-License-Identifier: BSD-3-Clause
 
 #ifndef CPU_STATS_H
 #define CPU_STATS_H
@@ -47,8 +40,9 @@ struct CoreStats {
 
     void setXpathValues(sysrepo::Session session,
                         std::optional<libyang::DataNode>& parent,
+                        std::string_view moduleName,
                         std::optional<size_t> index) {
-        std::string basePath("/dt-metrics:system-metrics/cpu-statistics");
+        std::string basePath("/" + std::string(moduleName) + ":system-metrics/cpu-statistics");
         std::string cpuPath;
         if (index) {
             cpuPath = "/cpu[id='" + std::to_string(index.value()) + "']";
@@ -125,11 +119,13 @@ struct CpuStats : public CoreStats {
         }
     }
 
-    void setXpathValues(sysrepo::Session session, std::optional<libyang::DataNode>& parent) {
+    void setXpathValues(sysrepo::Session session,
+                        std::optional<libyang::DataNode>& parent,
+                        std::string_view moduleName) {
         logMessage(SR_LL_DBG, "Setting xpath values for cpu statistics");
-        CoreStats::setXpathValues(session, parent, std::nullopt);
+        CoreStats::setXpathValues(session, parent, moduleName, std::nullopt);
         for (size_t i = 0; i < mCoreTimes.size(); i++) {
-            mCoreTimes[i].setXpathValues(session, parent, i);
+            mCoreTimes[i].setXpathValues(session, parent, moduleName, i);
         }
     }
 

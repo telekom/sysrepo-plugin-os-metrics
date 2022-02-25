@@ -1,19 +1,12 @@
-// (C) 2020 Deutsche Telekom AG.
+// telekom / sysrepo-plugin-os-metrics
 //
-// Deutsche Telekom AG and all other contributors /
-// copyright owners license this file to you under the Apache
-// License, Version 2.0 (the "License"); you may not use this
-// file except in compliance with the License.
-// You may obtain a copy of the License at
+// This program is made available under the terms of the
+// BSD 3-Clause license which is available at
+// https://opensource.org/licenses/BSD-3-Clause
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+// SPDX-FileCopyrightText: 2022 Deutsche Telekom AG
 //
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied. See the License for the
-// specific language governing permissions and limitations
-// under the License.
+// SPDX-License-Identifier: BSD-3-Clause
 
 #ifndef CALLBACK_H
 #define CALLBACK_H
@@ -34,24 +27,27 @@ struct Callback {
 
     static ErrorCode cpuStateCallback(Session session,
                                       uint32_t /* subscriptionId */,
-                                      std::string_view /* moduleName */,
+                                      std::string_view moduleName,
                                       std::optional<std::string_view> /* subXPath */,
                                       std::optional<std::string_view> /* requestXPath */,
                                       uint32_t /* requestId */,
                                       std::optional<DataNode>& parent) {
         CpuStats stats;
         stats.readCpuTimes();
-        stats.setXpathValues(session, parent);
+        stats.setXpathValues(session, parent, moduleName);
         double loadavg[3];
         if (getloadavg(loadavg, 3) != -1) {
             setXpath(session, parent,
-                     "/dt-metrics:system-metrics/cpu-statistics/average-load/avg-1min-load",
+                     "/" + std::string(moduleName) +
+                         ":system-metrics/cpu-statistics/average-load/avg-1min-load",
                      std::to_string(loadavg[0]));
             setXpath(session, parent,
-                     "/dt-metrics:system-metrics/cpu-statistics/average-load/avg-5min-load",
+                     "/" + std::string(moduleName) +
+                         ":system-metrics/cpu-statistics/average-load/avg-5min-load",
                      std::to_string(loadavg[1]));
             setXpath(session, parent,
-                     "/dt-metrics:system-metrics/cpu-statistics/average-load/avg-15min-load",
+                     "/" + std::string(moduleName) +
+                         ":system-metrics/cpu-statistics/average-load/avg-15min-load",
                      std::to_string(loadavg[2]));
         } else {
             logMessage(SR_LL_ERR, "getloadavg call failed");
@@ -68,10 +64,10 @@ struct Callback {
                                          std::optional<DataNode>& parent) {
         auto module = findModule(session, moduleName);
         if (module && module.value().featureEnabled("usage-notifications")) {
-            MemoryMonitoring::getInstance().setXpaths(session, parent);
+            MemoryMonitoring::getInstance().setXpaths(session, parent, moduleName);
         }
         MemoryStats::getInstance().readMemoryStats();
-        MemoryStats::getInstance().setXpathValues(session, parent);
+        MemoryStats::getInstance().setXpathValues(session, parent, moduleName);
         return ErrorCode::Ok;
     }
 
@@ -84,21 +80,21 @@ struct Callback {
                                              std::optional<DataNode>& parent) {
         auto module = findModule(session, moduleName);
         if (module && module.value().featureEnabled("usage-notifications")) {
-            FilesystemMonitoring::getInstance().setXpaths(session, parent);
+            FilesystemMonitoring::getInstance().setXpaths(session, parent, moduleName);
         }
         FilesystemStats::getInstance().readFilesystemStats();
-        FilesystemStats::getInstance().setXpathValues(session, parent);
+        FilesystemStats::getInstance().setXpathValues(session, parent, moduleName);
         return ErrorCode::Ok;
     }
 
     static ErrorCode processesStateCallback(Session session,
                                             uint32_t /* subscriptionId */,
-                                            std::string_view /* moduleName */,
+                                            std::string_view moduleName,
                                             std::optional<std::string_view> /* subXPath */,
                                             std::optional<std::string_view> /* requestXPath */,
                                             uint32_t /* requestId */,
                                             std::optional<DataNode>& parent) {
-        ProcessStats::getInstance().readAndSetAll(session, parent);
+        ProcessStats::getInstance().readAndSetAll(session, parent, moduleName);
         return ErrorCode::Ok;
     }
 

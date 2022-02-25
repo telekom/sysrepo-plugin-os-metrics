@@ -1,19 +1,12 @@
-// (C) 2020 Deutsche Telekom AG.
+// telekom / sysrepo-plugin-os-metrics
 //
-// Deutsche Telekom AG and all other contributors /
-// copyright owners license this file to you under the Apache
-// License, Version 2.0 (the "License"); you may not use this
-// file except in compliance with the License.
-// You may obtain a copy of the License at
+// This program is made available under the terms of the
+// BSD 3-Clause license which is available at
+// https://opensource.org/licenses/BSD-3-Clause
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+// SPDX-FileCopyrightText: 2022 Deutsche Telekom AG
 //
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied. See the License for the
-// specific language governing permissions and limitations
-// under the License.
+// SPDX-License-Identifier: BSD-3-Clause
 
 #ifndef FILESYSTEM_STATS_H
 #define FILESYSTEM_STATS_H
@@ -43,10 +36,12 @@ struct Filesystem {
         std::cout << "spaceUsed: " << spaceUsed << std::endl;
     }
 
-    void setXpathValues(sysrepo::Session session, std::optional<libyang::DataNode>& parent) const {
-        std::string filesystemPath(
-            "/dt-metrics:system-metrics/filesystems/filesystem[mount-point='" + mountPoint +
-            "']/statistics/");
+    void setXpathValues(sysrepo::Session session,
+                        std::optional<libyang::DataNode>& parent,
+                        std::string_view moduleName) const {
+        std::string filesystemPath("/" + std::string(moduleName) +
+                                   ":system-metrics/filesystems/filesystem[mount-point='" +
+                                   mountPoint + "']/statistics/");
         setXpath(session, parent, filesystemPath + "name", name);
         setXpath(session, parent, filesystemPath + "type", type);
         setXpath(session, parent, filesystemPath + "total-blocks", std::to_string(totalBlocks));
@@ -155,11 +150,13 @@ struct FilesystemStats {
         }
     }
 
-    void setXpathValues(sysrepo::Session session, std::optional<libyang::DataNode>& parent) {
+    void setXpathValues(sysrepo::Session session,
+                        std::optional<libyang::DataNode>& parent,
+                        std::string_view moduleName) {
         std::lock_guard lk(mMtx);
         logMessage(SR_LL_DBG, "Setting xpath values for filesystems statistics");
         for (auto const& v : fsMap) {
-            v.second.setXpathValues(session, parent);
+            v.second.setXpathValues(session, parent, moduleName);
         }
     }
 

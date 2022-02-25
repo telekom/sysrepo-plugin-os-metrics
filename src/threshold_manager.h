@@ -1,19 +1,12 @@
-// (C) 2020 Deutsche Telekom AG.
+// telekom / sysrepo-plugin-os-metrics
 //
-// Deutsche Telekom AG and all other contributors /
-// copyright owners license this file to you under the Apache
-// License, Version 2.0 (the "License"); you may not use this
-// file except in compliance with the License.
-// You may obtain a copy of the License at
+// This program is made available under the terms of the
+// BSD 3-Clause license which is available at
+// https://opensource.org/licenses/BSD-3-Clause
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+// SPDX-FileCopyrightText: 2022 Deutsche Telekom AG
 //
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied. See the License for the
-// specific language governing permissions and limitations
-// under the License.
+// SPDX-License-Identifier: BSD-3-Clause
 
 #ifndef THRESHOLD_MANAGER_H
 #define THRESHOLD_MANAGER_H
@@ -50,8 +43,9 @@ struct UsageMonitoring {
         mCV.notify_all();
     }
 
-    void injectConnection(Connection conn) {
+    void injectConnection(Connection conn, std::string const& moduleName) {
         mConn = std::make_shared<Connection>(conn);
+        mModuleName = moduleName;
     }
 
     void checkAndTriggerNotification(std::string const& sensName,
@@ -59,7 +53,7 @@ struct UsageMonitoring {
                                      long double value,
                                      std::string const& type,
                                      std::string mountPoint = std::string()) {
-        std::string notifPath("/dt-metrics:" + type + "-threshold-crossed");
+        std::string notifPath("/" + mModuleName + ":" + type + "-threshold-crossed");
 
         /* start session */
         if (!mConn) {
@@ -86,6 +80,7 @@ struct UsageMonitoring {
     std::shared_ptr<Connection> mConn;
     std::mutex mNotificationMtx;
     std::condition_variable mCV;
+    std::string mModuleName;
 };
 
 struct MemoryMonitoring : public UsageMonitoring {
@@ -177,8 +172,11 @@ struct MemoryMonitoring : public UsageMonitoring {
         }
     }
 
-    void setXpaths(sysrepo::Session session, std::optional<libyang::DataNode>& parent) const {
-        std::string configPath("/dt-metrics:system-metrics/memory/usage-monitoring/");
+    void setXpaths(sysrepo::Session session,
+                   std::optional<libyang::DataNode>& parent,
+                   std::string_view moduleName) const {
+        std::string configPath("/" + std::string(moduleName) +
+                               ":system-metrics/memory/usage-monitoring/");
         setXpath(session, parent, configPath + "poll-interval", std::to_string(mPollInterval));
         for (auto const& [name, thr] : mMemoryThesholds) {
             std::stringstream stream;
@@ -328,11 +326,13 @@ struct FilesystemMonitoring : public UsageMonitoring {
         }
     }
 
-    void setXpaths(sysrepo::Session session, std::optional<libyang::DataNode>& parent) const {
+    void setXpaths(sysrepo::Session session,
+                   std::optional<libyang::DataNode>& parent,
+                   std::string_view moduleName) const {
         for (auto const& [fsName, thresholdTuple] : mFsThresholds) {
-            std::string const configPath(
-                "/dt-metrics:system-metrics/filesystems/filesystem[mount-point='" + fsName +
-                "']/usage-monitoring/");
+            std::string const configPath("/" + std::string(moduleName) +
+                                         ":system-metrics/filesystems/filesystem[mount-point='" +
+                                         fsName + "']/usage-monitoring/");
             setXpath(session, parent, configPath + "poll-interval",
                      std::to_string(std::get<0>(thresholdTuple)));
             for (auto const& [name, thr] : std::get<1>(thresholdTuple)) {

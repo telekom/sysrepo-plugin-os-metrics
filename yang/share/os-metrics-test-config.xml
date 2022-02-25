@@ -1,4 +1,4 @@
-<system-metrics xmlns="http://terastrm.net/ns/yang/dt-metrics">
+<system-metrics xmlns="http://terastrm.net/ns/yang/os-metrics">
 <memory>
     <usage-monitoring>
         <poll-interval>30</poll-interval>

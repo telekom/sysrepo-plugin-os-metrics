@@ -1,2 +1,2 @@
-project('dt-metrics-plugin', 'cpp', default_options: ['cpp_std=c++2a'], version: run_command('./get-version').stdout().strip(), license: 'Apache')
+project('os-metrics-plugin', 'cpp', default_options: ['cpp_std=c++2a'], version: run_command('./get-version').stdout().strip(), license: 'BSD 3-Clause')
 subdir('./src')

@@ -1,59 +1,31 @@
-# DT Metrics Plugin
+<h1 align="center">
+    OS Metrics Sysrepo Plugin
+</h1>
 
-A sysrepo metrics module and implementation to get more information out of Linux through the NETCONF pipeline.
+<p align="center">
+    <a href="/../../commits/" title="Last Commit"><img src="https://img.shields.io/github/last-commit/telekom/sysrepo-plugin-hardware?style=flat"></a>
+    <a href="/../../issues" title="Open Issues"><img src="https://img.shields.io/github/issues/telekom/sysrepo-plugin-hardware?style=flat"></a>
+    <a href="./LICENSE" title="License"><img src="https://img.shields.io/badge/License-BSD%203--Clause-blue.svg?style=flat"></a>
+</p>
 
-## Building
+<p align="center">
+  <a href="#development">Development</a> •
+  <a href="#documentation">Documentation</a> •
+  <a href="#support-and-feedback">Support</a> •
+  <a href="#how-to-contribute">Contribute</a> •
+  <a href="#contributors">Contributors</a> •
+  <a href="#licensing">Licensing</a>
+</p>
 
-The plugin is built as a shared library using the [MESON build system](https://mesonbuild.com/) and is required for building the plugin.
+The goal of this project is to create a metrics module and implementation to get more information out of Debian through the NETCONF pipeline.
 
-```bash
-apt install meson ninja-build cmake pkg-config
-```
+## About this component
 
-The plugin install location is the `{prefix}` folder, the `libdt-metrics-plugin.so` should be installed over to the `plugins` directory from the sysrepo installation (e.g. the sysrepo install location for the bash commands below is `/opt/sysrepo`)\
-Build by making a build directory (i.e. build/), run meson in that dir, and then use ninja to build the desired target.
+The OS Metrics Module was designed to deliver a decent amount of information about the environment (cpu, memory, filesystem, processes) while also being able to configure usage thresholds used for notifications.
 
-```bash
-mkdir -p /opt/sysrepo/lib/sysrepo/plugins
-git clone git@gitlab.dev.terastrm.net:mirrors/qualitance-os-monitoring.git
-cd qualitance-os-monitoring
-meson --prefix="/opt/sysrepo/lib/sysrepo/plugins" ./build
-ninja -C ./build
-```
+## Development
 
-## Installing
-
-Meson installs the shared-library in the `{prefix}` directory.
-
-```bash
-ninja install -C ./build
-```
-
-## Running and testing the plugin
-The necessary .yang files need to be installed in sysrepo from the `yang` directory
-
-```bash
-sysrepoctl -i yang/dt-metrics.yang
-sysrepoctl -c dt-metrics -e usage-notifications
-```
-
-The sysrepo plugin daemon needs to be loaded after the plugin is installed:
-
-```bash
-sysrepo-plugind -v 4 -d
-```
-
-The functionality can be tested by doing an operational data request through sysrepo:
-
-```bash
-sysrepocfg -x "/dt-metrics:system-metrics" -X -d operational -f json
-```
-
-As described in the module itself the plugin holds configuration data provided by the user in the running data-store and uses the data to create and monitor threshold values for filesystem and memory nodes. These configuration nodes and the notifications themselves are grouped under the 'usage-notifications' feature which needs to be enabled.
-
-```bash
-sysrepocfg -Iyang/share/dt-metrics-text-config.xml -d running
-```
+The full development progress can be found in the [documentation](./DOCUMENTATION.md).
 
 ### Dependencies
 ```
@@ -66,5 +38,72 @@ pthreads
 df
 ```
 
-The libyang and sysrepo dependencies should be compiled from their public repositories `libyang1` branches.
 The plugin assumes it's being installed on a Debian system and uses tools like `df`, and the `/proc` structure internally.
+
+## Build
+
+The plugin is built as a shared library using the [MESON build system](https://mesonbuild.com/) and is required for building the plugin.
+
+```bash
+apt install meson ninja-build cmake pkg-config
+```
+
+The plugin install location is the `{prefix}` folder, the `libos-metrics-plugin.so` should be installed over to the `plugins` directory from the sysrepo installation (e.g. the sysrepo install location for the bash commands below is `/opt/sysrepo`)\
+Build by making a build directory (i.e. build/), run meson in that dir, and then use ninja to build the desired target.
+
+```bash
+mkdir -p /opt/sysrepo/lib/sysrepo-plugind/plugins
+git clone git@github.com:telekom/sysrepo-plugin-os-metrics.git
+cd sysrepo-plugin-os-metrics
+meson --prefix="/opt/sysrepo/lib/sysrepo-plugind/plugins" ./build
+ninja -C ./build
+```
+
+## Installation
+
+Meson installs the shared-library in the `{prefix}` directory.
+
+```bash
+ninja install -C ./build
+```
+
+## Code of Conduct
+
+This project has adopted the [Contributor Covenant](https://www.contributor-covenant.org/) in version 2.0 as our code of conduct. Please see the details in our [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md). All contributors must abide by the code of conduct.
+
+## Working Language
+
+We decided to apply _English_ as the primary project language.
+
+Consequently, all content will be made available primarily in English. We also ask all interested people to use English as language to create issues, in their code (comments, documentation etc.) and when you send requests to us. The application itself and all end-user facing content will be made available in other languages as needed.
+
+## Documentation
+
+The full documentation for the plugin can be found [here](./DOCUMENTATION.md).
+
+## Support and Feedback
+
+The following channels are available for discussions, feedback, and support requests:
+
+| Type                     | Channel                                                |
+| ------------------------ | ------------------------------------------------------ |
+| **Issues**   | <a href="/../../issues/new/choose" title="General Discussion"><img src="https://img.shields.io/github/issues/telekom/sysrepo-plugin-os-metrics?style=flat-square"></a> </a>   |
+| **Other Requests**    | <a href="mailto:opensource@telekom.de" title="Email Open Source Team"><img src="https://img.shields.io/badge/email-Open%20Source%20Team-green?logo=mail.ru&style=flat-square&logoColor=white"></a>   |
+
+## How to Contribute
+
+Contribution and feedback is encouraged and always welcome. For more information about how to contribute, the project structure, as well as additional contribution information, see our [Contribution Guidelines](./CONTRIBUTING.md). By participating in this project, you agree to abide by its [Code of Conduct](./CODE_OF_CONDUCT.md) at all times.
+
+## Contributors
+
+Our commitment to open source means that we are enabling -in fact encouraging- all interested parties to contribute and become part of its developer community.
+
+## Licensing
+
+Copyright (C) 2021 Deutsche Telekom AG.
+
+Licensed under the **BSD 3-Clause License** (the "License"); you may not use this file except in compliance with the License.
+
+You may obtain a copy of the License by reviewing the file [LICENSE](./LICENSE) in the repository.
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the [LICENSE](./LICENSE) for the specific language governing permissions and limitations under the License.

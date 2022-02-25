@@ -1,19 +1,12 @@
-// (C) 2020 Deutsche Telekom AG.
+// telekom / sysrepo-plugin-os-metrics
 //
-// Deutsche Telekom AG and all other contributors /
-// copyright owners license this file to you under the Apache
-// License, Version 2.0 (the "License"); you may not use this
-// file except in compliance with the License.
-// You may obtain a copy of the License at
+// This program is made available under the terms of the
+// BSD 3-Clause license which is available at
+// https://opensource.org/licenses/BSD-3-Clause
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+// SPDX-FileCopyrightText: 2022 Deutsche Telekom AG
 //
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied. See the License for the
-// specific language governing permissions and limitations
-// under the License.
+// SPDX-License-Identifier: BSD-3-Clause
 
 #ifndef MEMORY_STATS_H
 #define MEMORY_STATS_H
@@ -40,10 +33,13 @@ struct MemoryStats {
     MemoryStats(MemoryStats const&) = delete;
     void operator=(MemoryStats const&) = delete;
 
-    void setXpathValues(sysrepo::Session session, std::optional<libyang::DataNode>& parent) {
+    void setXpathValues(sysrepo::Session session,
+                        std::optional<libyang::DataNode>& parent,
+                        std::string_view moduleName) {
         std::lock_guard lk(mMtx);
         logMessage(SR_LL_DBG, "Setting xpath values for memory statistics");
-        std::string memoryPath("/dt-metrics:system-metrics/memory/statistics/");
+        std::string memoryPath("/" + std::string(moduleName) +
+                               ":system-metrics/memory/statistics/");
         setXpath(session, parent, memoryPath + "free", std::to_string(mFree / 1024ULL));
         setXpath(session, parent, memoryPath + "swap-free-mb", std::to_string(mSwapFree / 1024ULL));
         setXpath(session, parent, memoryPath + "swap-total", std::to_string(mSwapTotal / 1024ULL));
