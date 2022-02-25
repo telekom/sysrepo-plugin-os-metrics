@@ -100,7 +100,7 @@ Our commitment to open source means that we are enabling -in fact encouraging- a
 
 ## Licensing
 
-Copyright (C) 2021 Deutsche Telekom AG.
+Copyright (C) 2022 Deutsche Telekom AG.
 
 Licensed under the **BSD 3-Clause License** (the "License"); you may not use this file except in compliance with the License.
 
