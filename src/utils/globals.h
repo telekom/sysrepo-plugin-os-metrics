@@ -41,9 +41,9 @@ static bool setXpath(sysrepo::Session& session,
                      std::string const& value) {
     try {
         if (parent) {
-            parent.value().newPath(node_xpath.c_str(), value.c_str());
+            parent.value().newPath(node_xpath, value);
         } else {
-            parent = session.getContext().newPath(node_xpath.c_str(), value.c_str());
+            parent = session.getContext().newPath(node_xpath, value);
         }
     } catch (std::runtime_error const& e) {
         logMessage(SR_LL_WRN,
@@ -71,7 +71,7 @@ static void printCurrentConfig(sysrepo::Session& session,
                                std::string const& node) {
     try {
         std::string xpath(std::string("/") + std::string(module_name) + std::string(":") + node);
-        auto values = session.getData(xpath.c_str());
+        auto values = session.getData(xpath);
         if (!values)
             return;
 
@@ -79,7 +79,7 @@ static void printCurrentConfig(sysrepo::Session& session,
             values.value()
                 .printStr(libyang::DataFormat::JSON, libyang::PrintFlags::WithSiblings)
                 .value());
-        logMessage(SR_LL_DBG, toPrint.c_str());
+        logMessage(SR_LL_DBG, toPrint);
     } catch (const std::exception& e) {
         logMessage(SR_LL_WRN, e.what());
     }

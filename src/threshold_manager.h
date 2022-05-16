@@ -61,18 +61,18 @@ struct UsageMonitoring {
         }
         auto sess = mConn->sessionStart();
 
-        auto input = sess.getContext().newPath((notifPath + "/name").c_str(), sensName.c_str());
+        auto input = sess.getContext().newPath((notifPath + "/name"), sensName);
         if (type == "filesystem") {
-            input.newPath((notifPath + "/mount-point").c_str(), mountPoint.c_str());
+            input.newPath((notifPath + "/mount-point"), mountPoint);
         }
         if (value >= thr.value) {
-            input.newPath((notifPath + "/rising").c_str(), nullptr);
+            input.newPath((notifPath + "/rising"));
         } else {
-            input.newPath((notifPath + "/falling").c_str(), nullptr);
+            input.newPath((notifPath + "/falling"));
         }
         std::stringstream stream;
         stream << std::fixed << std::setprecision(2) << value;
-        input.newPath((notifPath + "/usage").c_str(), stream.str().c_str());
+        input.newPath((notifPath + "/usage"), stream.str());
 
         sess.sendNotification(input, sysrepo::Wait::No);
     }
@@ -131,7 +131,7 @@ struct MemoryMonitoring : public UsageMonitoring {
     void populateConfigData(sysrepo::Session& session, std::string_view moduleName) {
         std::string const data_xpath(std::string("/") + std::string(moduleName) +
                                      ":system-metrics/memory");
-        auto const& data(session.getData(data_xpath.c_str()));
+        auto const& data(session.getData(data_xpath));
         if (!data) {
             logMessage(SR_LL_ERR, "No data found for population.");
             return;
@@ -261,7 +261,7 @@ struct FilesystemMonitoring : public UsageMonitoring {
     void populateConfigData(sysrepo::Session& session, std::string_view moduleName) {
         std::string const data_xpath(std::string("/") + std::string(moduleName) +
                                      ":system-metrics/filesystems");
-        auto const& data(session.getData(data_xpath.c_str()));
+        auto const& data(session.getData(data_xpath));
         if (!data) {
             logMessage(SR_LL_ERR, "No data found for population.");
             return;

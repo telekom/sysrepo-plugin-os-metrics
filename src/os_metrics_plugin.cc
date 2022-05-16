@@ -47,21 +47,20 @@ int sr_plugin_init_cb(sr_session_ctx_t* session, void** /*private_data*/) {
                                                                       MetricsModel::moduleName);
 
         sysrepo::Subscription sub = ses.onModuleChange(
-            MetricsModel::moduleName.c_str(), &metrics::Callback::memoryConfigCallback,
-            memory_config_xpath.c_str(), 0,
-            sysrepo::SubscribeOptions::Enabled | sysrepo::SubscribeOptions::DoneOnly);
-        sub.onModuleChange(
-            MetricsModel::moduleName.c_str(), &metrics::Callback::filesystemsConfigCallback,
-            filesystem_state_xpath.c_str(), 0,
-            sysrepo::SubscribeOptions::Enabled | sysrepo::SubscribeOptions::DoneOnly);
-        sub.onOperGet(MetricsModel::moduleName.c_str(), &metrics::Callback::cpuStateCallback,
-                      cpu_state_xpath.c_str());
-        sub.onOperGet(MetricsModel::moduleName.c_str(), &metrics::Callback::memoryStateCallback,
-                      memory_state_xpath.c_str());
-        sub.onOperGet(MetricsModel::moduleName.c_str(), &metrics::Callback::filesystemStateCallback,
-                      filesystem_state_xpath.c_str());
-        sub.onOperGet(MetricsModel::moduleName.c_str(), &metrics::Callback::processesStateCallback,
-                      processes_state_spath.c_str());
+            MetricsModel::moduleName, &metrics::Callback::memoryConfigCallback, memory_config_xpath,
+            0, sysrepo::SubscribeOptions::Enabled | sysrepo::SubscribeOptions::DoneOnly);
+        sub.onModuleChange(MetricsModel::moduleName, &metrics::Callback::filesystemsConfigCallback,
+                           filesystem_state_xpath, 0,
+                           sysrepo::SubscribeOptions::Enabled |
+                               sysrepo::SubscribeOptions::DoneOnly);
+        sub.onOperGet(MetricsModel::moduleName, &metrics::Callback::cpuStateCallback,
+                      cpu_state_xpath);
+        sub.onOperGet(MetricsModel::moduleName, &metrics::Callback::memoryStateCallback,
+                      memory_state_xpath);
+        sub.onOperGet(MetricsModel::moduleName, &metrics::Callback::filesystemStateCallback,
+                      filesystem_state_xpath);
+        sub.onOperGet(MetricsModel::moduleName, &metrics::Callback::processesStateCallback,
+                      processes_state_spath);
         theModel.sub = std::make_shared<sysrepo::Subscription>(std::move(sub));
     } catch (std::exception const& e) {
         logMessage(SR_LL_ERR, std::string("sr_plugin_init_cb: ") + e.what());
