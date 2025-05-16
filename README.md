@@ -17,6 +17,8 @@
   <a href="#licensing">Licensing</a>
 </p>
 
+The development of this plugin has been moved to [telekom/sysrepo-plugins](https://github.com/telekom/sysrepo-plugins/tree/main/plugins/os-metrics-plugin).
+
 The goal of this project is to create a metrics module and implementation to get more information out of Debian through the NETCONF pipeline.
 
 ## About this component
